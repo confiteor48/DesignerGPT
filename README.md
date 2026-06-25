@@ -32,14 +32,6 @@ The extension stores settings in browser extension storage and applies them dire
 
 ## Screenshots
 
-The example screenshots use placeholder chat titles and lorem ipsum message text.
-
-![DesignerGPT themed conversation](assets/screenshots/conversation.png)
-
-![DesignerGPT prompt tools](assets/screenshots/prompt-tools.png)
-
-![DesignerGPT message navigator](assets/screenshots/navigator.png)
-
 ![DesignerGPT advanced settings](assets/screenshots/settings-advanced.png)
 
 ## Installation
