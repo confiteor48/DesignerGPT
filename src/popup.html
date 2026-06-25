@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DesignerGPT</title>
+    <link rel="stylesheet" href="ui.css">
+  </head>
+  <body class="popup-body">
+    <main class="popup glass-shell">
+      <header class="popup-hero">
+        <div class="brand-lockup">
+          <img class="app-icon popup-app-icon" src="../assets/logo.png" alt="" aria-hidden="true">
+          <div>
+            <h1>DesignerGPT</h1>
+          </div>
+        </div>
+        <label class="switch gem-switch">
+          <input id="enabled" type="checkbox">
+          <span class="switch-track" aria-hidden="true"></span>
+          <span>Enabled</span>
+        </label>
+      </header>
+
+      <section class="tile-panel" aria-label="Quick settings">
+        <label class="quick-tile span-2">
+          <span>Theme</span>
+          <select id="theme"></select>
+        </label>
+
+        <label class="quick-tile span-2">
+          <span>Brand mask</span>
+          <input id="brandMask" type="text" maxlength="32" placeholder="DesignerGPT">
+        </label>
+
+        <label class="quick-tile color-tile">
+          <span>Accent</span>
+          <input id="accentColor" type="color">
+        </label>
+        <label class="quick-tile color-tile">
+          <span>Page</span>
+          <input id="backgroundColor" type="color">
+        </label>
+        <label class="quick-tile color-tile">
+          <span>User</span>
+          <input id="userBubble" type="color">
+        </label>
+        <label class="quick-tile color-tile">
+          <span>Assistant</span>
+          <input id="assistantBubble" type="color">
+        </label>
+
+        <label class="quick-tile span-2">
+          <span>Font</span>
+          <select id="fontFamily"></select>
+        </label>
+
+        <label class="quick-tile slider-tile span-2">
+          <span>Text size <output id="fontSizeValue"></output></span>
+          <input id="fontSize" type="range" min="14" max="22" step="1">
+        </label>
+
+        <label class="quick-tile slider-tile span-2">
+          <span>Chat width <output id="chatWidthValue"></output></span>
+          <input id="chatWidth" type="range" min="720" max="1800" step="20">
+        </label>
+
+        <label class="quick-tile toggle-tile span-2">
+          <span>Compact sidebar</span>
+          <input id="compactSidebar" type="checkbox">
+        </label>
+
+        <label class="quick-tile toggle-tile span-2">
+          <span>Zen mode</span>
+          <input id="zenMode" type="checkbox">
+        </label>
+
+        <label class="quick-tile toggle-tile span-2">
+          <span>Local notes</span>
+          <input id="localNotes" type="checkbox">
+        </label>
+
+        <label class="quick-tile toggle-tile span-2">
+          <span>Safe mode</span>
+          <input id="advancedSafeMode" type="checkbox">
+        </label>
+
+      </section>
+
+      <footer class="popup-footer">
+        <button id="reset" type="button">Reset</button>
+        <a href="options.html" target="_blank">Settings</a>
+      </footer>
+    </main>
+    <script src="settings.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

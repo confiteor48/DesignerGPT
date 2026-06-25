@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DesignerGPT Settings</title>
+    <link rel="stylesheet" href="ui.css">
+  </head>
+  <body class="settings-body">
+    <span id="top" class="page-anchor" aria-hidden="true"></span>
+    <main class="settings-layout">
+      <aside class="settings-nav glass-shell" aria-label="Settings sections">
+        <nav>
+          <a href="#top">Appearance</a>
+          <a href="#chat">Chat</a>
+          <a href="#colors">Colors</a>
+          <a href="#backgrounds">Backgrounds</a>
+          <a href="#identity">Identity</a>
+          <a href="#advanced">Advanced</a>
+        </nav>
+      </aside>
+
+      <section class="settings-main glass-shell">
+        <header class="settings-hero">
+          <div class="hero-lockup">
+            <img class="app-icon settings-app-icon" src="../assets/logo.png" alt="" aria-hidden="true">
+            <div>
+              <h1>DesignerGPT</h1>
+              <p><em>Refuse the Default.</em></p>
+            </div>
+          </div>
+          <label class="switch gem-switch">
+            <input id="enabled" type="checkbox">
+            <span class="switch-track" aria-hidden="true"></span>
+            <span>Enabled</span>
+          </label>
+        </header>
+
+        <nav class="settings-tabs" role="tablist" aria-label="Settings sections">
+          <a href="#theme" data-settings-tab="theme"><span aria-hidden="true">T</span>Theme</a>
+          <a href="#chat" data-settings-tab="chat"><span aria-hidden="true">C</span>Chat</a>
+          <a href="#branding" data-settings-tab="branding"><span aria-hidden="true">B</span>Branding</a>
+          <a href="#advanced" data-settings-tab="advanced"><span aria-hidden="true">A</span>Advanced</a>
+        </nav>
+
+        <div class="settings-panels">
+        <section id="appearance" class="settings-card settings-panel" role="tabpanel" data-settings-panel="appearance">
+          <div class="card-title">
+            <h2>Theme</h2>
+            <span aria-hidden="true">T</span>
+          </div>
+          <div class="card-fields two-col">
+            <label>Theme <select id="theme"></select></label>
+          </div>
+          <div id="themeGallery" class="theme-gallery" aria-label="Theme previews"></div>
+        </section>
+
+        <section id="chat" class="settings-card settings-panel" role="tabpanel" data-settings-panel="chat" hidden>
+          <div class="card-title">
+            <h2>Chat</h2>
+            <span aria-hidden="true">C</span>
+          </div>
+          <div class="card-fields two-col">
+            <label>Readability <select id="readabilityMode"></select></label>
+            <label>Font <select id="fontFamily"></select></label>
+            <label class="range-field"><span class="field-label">Text size <span class="field-value" id="fontSizePreviewValue"></span></span><span class="slider-shell"><input id="fontSize" type="range" min="12" max="28" step="1"></span></label>
+            <label class="number-field"><span class="field-label">Line height</span><input id="lineHeight" type="number" min="1.2" max="2.2" step="0.05"></label>
+            <label>Chat column width <input id="chatWidth" type="number" min="600" max="1800"></label>
+            <label>Corner radius <input id="pageRadius" type="number" min="0" max="28"></label>
+          </div>
+          <div class="code-controls">
+            <div class="card-title compact-title">
+              <h3>Code Blocks</h3>
+              <span aria-hidden="true">#</span>
+            </div>
+            <div class="card-fields two-col">
+              <label>Code font <select id="codeFontFamily"></select></label>
+              <label>Code size <input id="codeFontSize" type="number" min="11" max="22" step="1"></label>
+              <label>Code border <input id="codeBorderColor" type="color"></label>
+              <label>Code radius <input id="codeRadius" type="number" min="0" max="24" step="1"></label>
+            </div>
+          </div>
+          <div class="chat-preview" aria-label="Preview">
+            <span>Preview</span>
+            <div class="preview-user">User bubble</div>
+            <div class="preview-assistant">Assistant bubble</div>
+            <pre><code>const theme = "DesignerGPT";</code></pre>
+          </div>
+          <div class="code-controls">
+            <div class="card-title compact-title">
+              <h3>Workspace</h3>
+              <span aria-hidden="true">+</span>
+            </div>
+            <div class="card-fields two-col">
+              <label class="checkbox"><input id="zenMode" type="checkbox"> Zen mode</label>
+              <label class="checkbox"><input id="localNotes" type="checkbox"> Local notes</label>
+            </div>
+          </div>
+        </section>
+
+        <section id="colors" class="settings-card settings-panel" role="tabpanel" data-settings-panel="colors" hidden>
+          <div class="card-title">
+            <h2>Colors</h2>
+            <span aria-hidden="true">*</span>
+          </div>
+          <div class="color-system">
+            <label class="gemstone-picker">Accent <input id="accentColor" type="color"></label>
+          </div>
+          <details class="advanced-colors" open>
+            <summary>Advanced Colors</summary>
+            <div class="card-fields color-grid">
+              <label>Background <input id="backgroundColor" type="color"></label>
+              <label>Surface <input id="surfaceColor" type="color"></label>
+              <label>Text <input id="surfaceText" type="color"></label>
+              <label>Muted text <input id="mutedText" type="color"></label>
+              <label>Border <input id="borderColor" type="color"></label>
+              <label>User bubble <input id="userBubble" type="color"></label>
+              <label>User text <input id="userText" type="color"></label>
+              <label>Assistant bubble <input id="assistantBubble" type="color"></label>
+              <label>Assistant text <input id="assistantText" type="color"></label>
+              <label>Code background <input id="codeBackground" type="color"></label>
+              <label>Code text <input id="codeText" type="color"></label>
+              <label>Composer <input id="composerBackground" type="color"></label>
+              <label>Sidebar <input id="sidebarBackground" type="color"></label>
+            </div>
+          </details>
+        </section>
+
+        <section id="backgrounds" class="settings-card settings-panel" role="tabpanel" data-settings-panel="backgrounds" hidden>
+          <div class="card-title">
+            <h2>Backgrounds</h2>
+            <span aria-hidden="true">BG</span>
+          </div>
+          <div class="card-fields two-col">
+            <label>Mode <select id="backgroundMode"></select></label>
+            <label>Gradient <input id="backgroundGradient" type="text"></label>
+            <label>Image opacity <input id="backgroundOpacity" type="number" min="0" max="0.9" step="0.05"></label>
+            <label>Image fit <select id="backgroundSize"></select></label>
+            <label>Image position <select id="backgroundPosition"></select></label>
+            <label>Image blur <input id="backgroundBlur" type="number" min="0" max="24" step="1"></label>
+            <label>Vignette <input id="backgroundVignette" type="number" min="0" max="0.8" step="0.05"></label>
+            <label class="file-field">Image <span class="file-control"><input id="backgroundImageFile" type="file" accept="image/*"><span class="file-current">Current: <strong id="backgroundImageName">theme-background.jpg</strong></span></span></label>
+            <button id="resetBackgroundImage" type="button" class="secondary-button">Reset image</button>
+          </div>
+        </section>
+
+        <section id="identity" class="settings-card settings-panel" role="tabpanel" data-settings-panel="identity" hidden>
+          <div class="card-title">
+            <h2>Identity</h2>
+            <span aria-hidden="true">ID</span>
+          </div>
+          <div class="card-fields two-col">
+            <label>Brand mask <input id="brandMask" type="text" maxlength="32"></label>
+            <label class="file-field">Brand image <span class="file-control"><input id="brandImageFile" type="file" accept="image/*"><span class="file-current">Current: <strong id="brandImageName">brand-default.png</strong></span></span></label>
+            <button id="resetBrandImage" type="button" class="secondary-button">Reset image</button>
+            <label class="checkbox"><input id="compactSidebar" type="checkbox"> Compact sidebar and hide extras</label>
+          </div>
+        </section>
+
+        <section id="advanced" class="settings-card settings-panel" role="tabpanel" data-settings-panel="advanced" hidden>
+          <div class="card-title">
+            <h2>Advanced</h2>
+            <span aria-hidden="true">A</span>
+          </div>
+          <div class="code-controls">
+            <div class="card-title compact-title">
+              <h3>Runtime Safety</h3>
+              <span aria-hidden="true">!</span>
+            </div>
+            <div class="card-fields two-col">
+              <label class="checkbox"><input id="advancedSafeMode" type="checkbox"> Safe mode for advanced widgets</label>
+            </div>
+          </div>
+          <div class="code-controls">
+            <div class="card-title compact-title">
+              <h3>Prompt Tools</h3>
+              <span aria-hidden="true">/</span>
+            </div>
+            <div class="card-fields two-col">
+              <label class="checkbox"><input id="promptTools" type="checkbox"> Prompt snippets panel</label>
+              <label class="checkbox"><input id="promptSlashPalette" type="checkbox"> Slash palette</label>
+              <label class="checkbox"><input id="promptHistory" type="checkbox"> Prompt history recall</label>
+              <label>Prompt history limit <input id="promptHistoryMax" type="number" min="5" max="200" step="5"></label>
+              <button id="clearPromptHistory" type="button" class="secondary-button">Clear history</button>
+              <button id="exportPromptSnippets" type="button" class="secondary-button">Export snippets</button>
+              <label class="import-button">
+                Import snippets
+                <input id="importPromptSnippets" type="file" accept="application/json">
+              </label>
+            </div>
+          </div>
+          <div class="code-controls">
+            <div class="card-title compact-title">
+              <h3>Navigator</h3>
+              <span aria-hidden="true">N</span>
+            </div>
+            <div class="card-fields two-col">
+              <label class="checkbox"><input id="messageNavigator" type="checkbox"> Message navigator</label>
+              <label>Navigator message limit <input id="navigatorLimit" type="number" min="20" max="200" step="20"></label>
+            </div>
+          </div>
+          <footer class="settings-actions">
+            <button id="reset" type="button">Reset</button>
+            <button id="exportTheme" type="button">Export Theme</button>
+            <button id="exportSettings" type="button">Export JSON</button>
+            <label class="import-button">
+              Import Theme
+              <input id="importTheme" type="file" accept="application/json">
+            </label>
+            <label class="import-button">
+              Import JSON
+              <input id="importSettings" type="file" accept="application/json">
+            </label>
+          </footer>
+          <p id="settingsStatus" class="settings-status" role="status" aria-live="polite"></p>
+        </section>
+        </div>
+      </section>
+    </main>
+    <script src="settings.js"></script>
+    <script src="options.js"></script>
+  </body>
+</html>
