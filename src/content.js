@@ -378,9 +378,107 @@
     return String(settings[key]).replace(/[<>{}]/g, "");
   }
 
+  let extensionContextValid = true;
+
+  function markExtensionContextInvalid(error) {
+    const message = String(error?.message || error || "");
+    if (/Extension context invalidated/i.test(message)) {
+      extensionContextValid = false;
+      return true;
+    }
+    return false;
+  }
+
+  function safeRuntimeUrl(path) {
+    if (!extensionContextValid) return "";
+    try {
+      return chrome.runtime?.getURL?.(path) || "";
+    } catch (error) {
+      if (markExtensionContextInvalid(error)) return "";
+      throw error;
+    }
+  }
+
+  function safeStorageGet(keys, fallback = {}) {
+    if (!extensionContextValid) return Promise.resolve(fallback);
+    return new Promise((resolve) => {
+      try {
+        chrome.storage?.local?.get?.(keys, (result) => {
+          try {
+            const error = chrome.runtime?.lastError;
+            if (error && markExtensionContextInvalid(error)) {
+              resolve(fallback);
+              return;
+            }
+          } catch (runtimeError) {
+            if (markExtensionContextInvalid(runtimeError)) {
+              resolve(fallback);
+              return;
+            }
+          }
+          resolve(result || fallback);
+        });
+      } catch (error) {
+        if (!markExtensionContextInvalid(error)) {
+          console.warn("DesignerGPT storage get failed", error);
+        }
+        resolve(fallback);
+      }
+    });
+  }
+
+  function safeStorageSet(values, callback) {
+    if (!extensionContextValid) return;
+    try {
+      chrome.storage?.local?.set?.(values, () => {
+        try {
+          const error = chrome.runtime?.lastError;
+          if (error && markExtensionContextInvalid(error)) return;
+        } catch (runtimeError) {
+          if (markExtensionContextInvalid(runtimeError)) return;
+        }
+        callback?.();
+      });
+    } catch (error) {
+      if (!markExtensionContextInvalid(error)) {
+        console.warn("DesignerGPT storage set failed", error);
+      }
+    }
+  }
+
+  function safeStorageRemove(keys, callback) {
+    if (!extensionContextValid) return;
+    try {
+      chrome.storage?.local?.remove?.(keys, () => {
+        try {
+          const error = chrome.runtime?.lastError;
+          if (error && markExtensionContextInvalid(error)) return;
+        } catch (runtimeError) {
+          if (markExtensionContextInvalid(runtimeError)) return;
+        }
+        callback?.();
+      });
+    } catch (error) {
+      if (!markExtensionContextInvalid(error)) {
+        console.warn("DesignerGPT storage remove failed", error);
+      }
+    }
+  }
+
+  function safeAddStorageChangeListener(listener) {
+    if (!extensionContextValid) return;
+    try {
+      chrome.storage?.onChanged?.addListener?.(listener);
+    } catch (error) {
+      if (!markExtensionContextInvalid(error)) {
+        console.warn("DesignerGPT storage listener failed", error);
+      }
+    }
+  }
+
   function backgroundCss(settings) {
     if (settings.backgroundMode === "image") {
-      const imageUrl = settings.backgroundImage || defaultBackgroundUrl || chrome.runtime.getURL(DEFAULT_BACKGROUND_PATH);
+      const imageUrl = settings.backgroundImage || defaultBackgroundUrl || safeRuntimeUrl(DEFAULT_BACKGROUND_PATH);
       const opacity = Math.max(0, Math.min(0.9, Number(settings.backgroundOpacity) || 0));
       const safeUrl = String(imageUrl).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
       return `linear-gradient(rgba(0, 0, 0, ${opacity}), rgba(0, 0, 0, ${opacity})), url("${safeUrl}")`;
@@ -411,7 +509,10 @@
       return;
     }
 
-    defaultBackgroundLoad = fetch(chrome.runtime.getURL(DEFAULT_BACKGROUND_PATH))
+    const backgroundUrl = safeRuntimeUrl(DEFAULT_BACKGROUND_PATH);
+    if (!backgroundUrl) return;
+
+    defaultBackgroundLoad = fetch(backgroundUrl)
       .then((response) => {
         if (!response.ok) throw new Error(`Unable to load ${DEFAULT_BACKGROUND_PATH}`);
         return response.blob();
@@ -777,6 +878,55 @@ html:not(.lcgs-image-viewer-active) main section [data-message-id][class~="group
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--lcgs-accent) 46%, transparent) inset !important;
 }
 
+main#main [data-lcgs-memory-label="true"] {
+  display: inline-flex !important;
+  box-sizing: border-box !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 5px !important;
+  justify-self: start !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: var(--lcgs-text) !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font: 800 11px/1.15 ui-monospace, SFMono-Regular, Consolas, Liberation Mono, monospace !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+}
+
+main#main [data-lcgs-memory-label="true"] [aria-label="Announcements"] {
+  display: none !important;
+}
+
+main#main [data-lcgs-memory-label="true"] button {
+  min-height: 0 !important;
+  padding: 0 !important;
+  color: var(--lcgs-text) !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+main#main [data-lcgs-memory-label="true"] :is(svg, img) {
+  width: 14px !important;
+  height: 14px !important;
+  flex: 0 0 14px !important;
+}
+
+main#main [data-lcgs-memory-label="true"] :is(div, span):not(:has(svg)):not(:has(img)) {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+}
+
 html:not(.lcgs-image-viewer-active) main section[data-turn] :is(button, a[role="button"], [role="button"]):has(svg):not(:has(:is(span, div, p))):not([data-testid="send-button"]):not([aria-label="Sources"]):not([aria-label*="Voice"]):not([aria-label*="dictation"]):not([aria-label*="Microphone"]):not([aria-label*="Edit"]),
 html:not(.lcgs-image-viewer-active) main section [data-message-id][class~="group/message"] :is(button, a[role="button"], [role="button"]):has(svg):not(:has(:is(span, div, p))):not([data-testid="send-button"]):not([aria-label="Sources"]):not([aria-label*="Voice"]):not([aria-label*="dictation"]):not([aria-label*="Microphone"]):not([aria-label*="Edit"]) {
   inline-size: 34px !important;
@@ -950,6 +1100,33 @@ html:not(.lcgs-image-viewer-active) main section [data-message-id][class~="group
   flex: 0 0 18px !important;
 }
 
+html:not(.lcgs-image-viewer-active) main section[data-turn] :is(button[aria-label="Share"], button[aria-label*="Share" i], button[data-testid*="share" i], a[role="button"][aria-label*="Share" i], [role="button"][aria-label*="Share" i]),
+html:not(.lcgs-image-viewer-active) main section [data-message-id][class~="group/message"] :is(button[aria-label="Share"], button[aria-label*="Share" i], button[data-testid*="share" i], a[role="button"][aria-label*="Share" i], [role="button"][aria-label*="Share" i]) {
+  inline-size: 34px !important;
+  block-size: 32px !important;
+  min-inline-size: 34px !important;
+  min-block-size: 32px !important;
+  width: 34px !important;
+  height: 32px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  color: var(--lcgs-text) !important;
+  background-color: color-mix(in srgb, var(--lcgs-surface) 62%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--lcgs-border) 58%, transparent) !important;
+  border-radius: max(8px, calc(var(--lcgs-radius) - 6px)) !important;
+  box-shadow: none !important;
+}
+
+html:not(.lcgs-image-viewer-active) main section[data-turn] :is(button[aria-label="Share"], button[aria-label*="Share" i], button[data-testid*="share" i], a[role="button"][aria-label*="Share" i], [role="button"][aria-label*="Share" i]) svg,
+html:not(.lcgs-image-viewer-active) main section [data-message-id][class~="group/message"] :is(button[aria-label="Share"], button[aria-label*="Share" i], button[data-testid*="share" i], a[role="button"][aria-label*="Share" i], [role="button"][aria-label*="Share" i]) svg {
+  width: 18px !important;
+  height: 18px !important;
+  flex: 0 0 18px !important;
+}
+
 html:not(.lcgs-image-viewer-active) main#main [data-testid="webpage-citation-pill"],
 html:not(.lcgs-image-viewer-active) main section[data-turn] [data-testid="webpage-citation-pill"],
 html:not(.lcgs-image-viewer-active) main section [data-message-id][class~="group/message"] [data-testid="webpage-citation-pill"] {
@@ -990,7 +1167,9 @@ html:not(.lcgs-image-viewer-active) main#main button.text-start:has(> svg.icon-x
 html:not(.lcgs-image-viewer-active) main section[data-turn] :is(button[data-testid="copy-turn-action-button"], button[data-testid="project-save-turn-action-button"], button[aria-label="Copy response"], button[aria-label="Copy message"], button[aria-label="Edit message"], button[aria-label="Add to project sources"], button[aria-label="Switch model"], button[aria-label="More actions"]):hover,
 html:not(.lcgs-image-viewer-active) main section [data-message-id][class~="group/message"] :is(button[data-testid="copy-turn-action-button"], button[data-testid="project-save-turn-action-button"], button[aria-label="Copy response"], button[aria-label="Copy message"], button[aria-label="Edit message"], button[aria-label="Add to project sources"], button[aria-label="Switch model"], button[aria-label="More actions"]):hover,
 html:not(.lcgs-image-viewer-active) main section[data-turn] button[aria-label="Sources"]:hover,
-html:not(.lcgs-image-viewer-active) main section [data-message-id][class~="group/message"] button[aria-label="Sources"]:hover {
+html:not(.lcgs-image-viewer-active) main section [data-message-id][class~="group/message"] button[aria-label="Sources"]:hover,
+html:not(.lcgs-image-viewer-active) main section[data-turn] :is(button[aria-label="Share"], button[aria-label*="Share" i], button[data-testid*="share" i], a[role="button"][aria-label*="Share" i], [role="button"][aria-label*="Share" i]):hover,
+html:not(.lcgs-image-viewer-active) main section [data-message-id][class~="group/message"] :is(button[aria-label="Share"], button[aria-label*="Share" i], button[data-testid*="share" i], a[role="button"][aria-label*="Share" i], [role="button"][aria-label*="Share" i]):hover {
   background-color: color-mix(in srgb, var(--lcgs-accent) 24%, var(--lcgs-surface) 62%) !important;
   border-color: color-mix(in srgb, var(--lcgs-accent) 58%, var(--lcgs-border) 42%) !important;
 }
@@ -1077,7 +1256,12 @@ html.lcgs-zen-mode-active #calpico-page-header,
 html.lcgs-zen-mode-active #stage-slideover-sidebar,
 html.lcgs-zen-mode-active #stage-sidebar-tiny-bar,
 html.lcgs-zen-mode-active #${EXPORT_ID},
-html.lcgs-zen-mode-active #${EXPORT_MODAL_ID} {
+html.lcgs-zen-mode-active #${EXPORT_MODAL_ID},
+html.lcgs-zen-mode-active #${PROMPT_TOOLS_ID},
+html.lcgs-zen-mode-active #${NAVIGATOR_ID},
+html.lcgs-zen-mode-active #${SLASH_PALETTE_ID},
+html.lcgs-zen-mode-active #${NOTES_ID},
+html.lcgs-zen-mode-active .${MESSAGE_NOTE_BUTTON_CLASS} {
   display: none !important;
 }
 
@@ -1090,6 +1274,69 @@ html.lcgs-zen-mode-active main#main #thread {
   width: min(100%, var(--lcgs-chat-width)) !important;
   margin-inline: auto !important;
   padding-bottom: 48px !important;
+}
+
+html.lcgs-zen-mode-active main#main :is(
+  [data-lcgs-memory-update="true"],
+  [data-lcgs-memory-label="true"]
+) {
+  display: none !important;
+}
+
+html.lcgs-zen-mode-active main#main :is(
+  button[data-testid="copy-turn-action-button"],
+  button[data-testid="project-save-turn-action-button"],
+  button[data-testid*="share" i],
+  button[data-testid*="copy" i],
+  button[data-testid*="thread-action" i],
+  button[aria-label="Sources"],
+  button[aria-label="Copy response"],
+  button[aria-label="Copy message"],
+  button[aria-label="Edit message"],
+  button[aria-label="Add to project sources"],
+  button[aria-label="Switch model"],
+  button[aria-label="More actions"],
+  button[aria-label*="Share" i],
+  button[aria-label*="copy" i],
+  button[aria-label*="source" i],
+  button[aria-label*="file" i],
+  button[aria-label*="project" i],
+  button[aria-label*="reaction" i],
+  button[aria-label*="read aloud" i],
+  button[aria-label*="regenerate" i],
+  button[aria-label*="retry" i],
+  a[role="button"][aria-label*="Share" i],
+  [role="button"][aria-label*="Share" i],
+  [data-testid="webpage-citation-pill"],
+  [data-testid*="citation" i],
+  [data-testid*="sources" i],
+  [data-testid*="file" i],
+  [data-testid*="attachment" i],
+  [class*="message-timestamp"],
+  .stylergpt-message-timestamp
+):not([data-testid="send-button"]):not([aria-label*="Voice" i]):not([aria-label*="Microphone" i]):not([aria-label*="dictation" i]) {
+  display: none !important;
+}
+
+html.lcgs-zen-mode-active main#main :is(
+  div,
+  span
+):has(> :is(
+  button[data-testid="copy-turn-action-button"],
+  button[data-testid="project-save-turn-action-button"],
+  button[aria-label="Sources"],
+  button[aria-label="Copy response"],
+  button[aria-label="Copy message"],
+  button[aria-label="Edit message"],
+  button[aria-label="Add to project sources"],
+  button[aria-label="Switch model"],
+  button[aria-label="More actions"],
+  button[aria-label*="Share" i],
+  button[aria-label*="source" i],
+  button[aria-label*="file" i],
+  [data-testid="webpage-citation-pill"]
+)):not(:has(#prompt-textarea)):not(:has([data-testid="send-button"])) {
+  display: none !important;
 }
 
 @media print {
@@ -2718,7 +2965,7 @@ html:not(.lcgs-image-viewer-active) [data-testid="webpage-citation-pill"] a:hove
     const root = document.documentElement;
     const enabled = Boolean(settings.enabled);
     const hasBrandName = enabled && Boolean(settings.brandMask);
-    const brandImage = settings.brandImage || chrome.runtime.getURL(DEFAULT_BRAND_IMAGE_PATH);
+    const brandImage = settings.brandImage || safeRuntimeUrl(DEFAULT_BRAND_IMAGE_PATH);
     const hasLogo = enabled && Boolean(brandImage);
 
     root.classList.toggle("lcgs-custom-logo-active", hasLogo);
@@ -2886,9 +3133,7 @@ html:not(.lcgs-image-viewer-active) [data-testid="webpage-citation-pill"] a:hove
   }
 
   function getStorageValues(keys) {
-    return new Promise((resolve) => {
-      chrome.storage.local.get(keys, resolve);
-    });
+    return safeStorageGet(keys);
   }
 
   async function attachExportNotes(conversation) {
@@ -3731,7 +3976,7 @@ ${body}
   }
 
   function savePromptSnippets(snippets) {
-    chrome.storage.local.set({ [PROMPT_SNIPPETS_STORAGE_KEY]: normalizePromptSnippets(snippets) }, () => {
+    safeStorageSet({ [PROMPT_SNIPPETS_STORAGE_KEY]: normalizePromptSnippets(snippets) }, () => {
       renderSnippetList();
       renderSlashPalette();
     });
@@ -3753,7 +3998,7 @@ ${body}
   function savePromptHistoryList(history) {
     const next = normalizePromptHistory(history).slice(0, activeSettings.promptHistoryMax);
     promptHistoryCache = next;
-    chrome.storage.local.set({ [PROMPT_HISTORY_STORAGE_KEY]: next }, () => {
+    safeStorageSet({ [PROMPT_HISTORY_STORAGE_KEY]: next }, () => {
       updatePromptHistoryCount();
       renderPromptHistoryList();
     });
@@ -4460,7 +4705,7 @@ ${body}
     panel.querySelector(".lcgs-notes-title").textContent = title;
     const textarea = panel.querySelector("textarea");
     textarea.placeholder = placeholder;
-    chrome.storage.local.get(key, (result) => {
+    safeStorageGet(key).then((result) => {
       if (panel.dataset.notesKey !== key) return;
       textarea.value = result[key] || "";
     });
@@ -4505,13 +4750,13 @@ ${body}
     panel.lcgsSaveNote = () => {
       const key = panel.dataset.notesKey || notesStorageKey();
       clearTimeout(saveTimer);
-      chrome.storage.local.set({ [key]: textarea.value }, updateMessageNoteStates);
+      safeStorageSet({ [key]: textarea.value }, updateMessageNoteStates);
     };
     textarea.addEventListener("input", () => {
       const key = panel.dataset.notesKey || notesStorageKey();
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => {
-        chrome.storage.local.set({ [key]: textarea.value }, updateMessageNoteStates);
+        safeStorageSet({ [key]: textarea.value }, updateMessageNoteStates);
       }, 250);
     });
 
@@ -4524,7 +4769,7 @@ ${body}
       const key = panel.dataset.notesKey || notesStorageKey();
       clearTimeout(saveTimer);
       textarea.value = "";
-      chrome.storage.local.remove(key, updateMessageNoteStates);
+      safeStorageRemove(key, updateMessageNoteStates);
     });
 
     return panel;
@@ -4577,7 +4822,7 @@ ${body}
     const buttons = Array.from(document.querySelectorAll(`.${MESSAGE_NOTE_BUTTON_CLASS}`));
     const keys = [...new Set(buttons.map((button) => button.dataset.noteKey).filter(Boolean))];
     if (!keys.length) return;
-    chrome.storage.local.get(keys, (result) => {
+    safeStorageGet(keys).then((result) => {
       buttons.forEach((button) => {
         const note = String(result[button.dataset.noteKey] || "").trim();
         button.dataset.hasNote = note ? "true" : "false";
@@ -4657,6 +4902,46 @@ ${body}
 
   function setImportantStyle(element, property, value) {
     element?.style?.setProperty(property, value, "important");
+  }
+
+  function clearMemoryUpdateMarkers() {
+    document.querySelectorAll("[data-lcgs-memory-update], [data-lcgs-memory-label], [data-lcgs-memory-body]").forEach((node) => {
+      delete node.dataset.lcgsMemoryUpdate;
+      delete node.dataset.lcgsMemoryLabel;
+      delete node.dataset.lcgsMemoryBody;
+    });
+  }
+
+  function getMemoryUpdateLabelWrap(label) {
+    let wrap = label;
+    let node = label.parentElement;
+    for (let depth = 0; node && depth < 4; depth += 1, node = node.parentElement) {
+      const text = node.textContent?.replace(/\s+/g, " ").trim();
+      const rect = node.getBoundingClientRect?.();
+      if (text !== "Memory updated" || (rect && rect.width > 180)) {
+        break;
+      }
+      wrap = node;
+    }
+    return wrap;
+  }
+
+  function updateMemoryUpdateBlocks() {
+    if (document.documentElement.dataset.localChatgptStyler !== "on") {
+      clearMemoryUpdateMarkers();
+      return;
+    }
+
+    clearMemoryUpdateMarkers();
+
+    const labels = Array.from(document.querySelectorAll("main#main :is(div, span)"))
+      .filter((node) => node.childElementCount <= 4 && node.textContent?.replace(/\s+/g, " ").trim() === "Memory updated");
+
+    labels.forEach((label) => {
+      const labelWrap = getMemoryUpdateLabelWrap(label.closest("div, span") || label);
+
+      labelWrap.dataset.lcgsMemoryLabel = "true";
+    });
   }
 
   const reasoningDisclosureLabels = /^(Analyzed|Analysis|Reasoned|Reasoning|Thought|Thinking|Searched|Searching|Browsed|Browsing|Read|Ran|Used|Called|Edited|Wrote)\b/i;
@@ -5087,6 +5372,7 @@ ${body}
     dynamicPageModesScheduled = false;
     updateSidebarSectionLabels();
     updateSidebarProfileStatus();
+    updateMemoryUpdateBlocks();
     updateImageViewerMode();
     updateTableWrappers();
     updateInlineCitationPills();
@@ -5147,14 +5433,14 @@ ${body}
     updateDynamicPageModes();
   }
 
-  chrome.storage.local.get(STORAGE_KEY, (result) => apply(result[STORAGE_KEY]));
+  safeStorageGet(STORAGE_KEY).then((result) => apply(result[STORAGE_KEY]));
   installReasoningDisclosureGuard();
   installPromptToolkit();
   ensureExporter();
   updateDynamicPageModes();
   new MutationObserver(scheduleDynamicPageModes).observe(document.body, { childList: true, subtree: true });
 
-  chrome.storage.onChanged.addListener((changes, areaName) => {
+  safeAddStorageChangeListener((changes, areaName) => {
     if (areaName === "local" && changes[STORAGE_KEY]) {
       apply(changes[STORAGE_KEY].newValue);
     } else if (areaName === "local" && Object.keys(changes).some((key) => key.startsWith(NOTES_STORAGE_PREFIX))) {

@@ -11,13 +11,12 @@ const popupFields = [
   "chatWidth",
   "compactSidebar",
   "zenMode",
-  "localNotes",
-  "advancedSafeMode"
+  "localNotes"
 ];
 
 let popupSettings = { ...LCGS_DEFAULTS };
 const popupReadabilityFieldIds = ["fontSize", "chatWidth"];
-const popupFunctionalFieldIds = ["enabled", "zenMode", "localNotes", "advancedSafeMode"];
+const popupFunctionalFieldIds = ["enabled", "zenMode", "localNotes"];
 
 function applyPopupSettings(settings) {
   popupSettings = lcgsNormalizeSettings(settings || LCGS_DEFAULTS);

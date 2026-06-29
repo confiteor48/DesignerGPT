@@ -399,14 +399,22 @@ output {
   min-height: 0;
   max-height: 640px;
   overflow: hidden;
-  padding: 10px;
+  padding: 8px;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(224, 23, 184, 0.08), transparent 28%),
+    radial-gradient(circle at 85% 8%, rgba(199, 138, 123, 0.06), transparent 24%),
+    linear-gradient(145deg, rgba(10, 9, 17, 0.62), rgba(9, 7, 14, 0.7)),
+    url("../assets/ui-background.jpg") center / cover fixed;
 }
 
 .popup {
   width: 548px;
   margin: 0 auto;
-  padding: 14px;
+  padding: 12px;
   overflow: hidden;
+  background:
+    linear-gradient(145deg, rgba(21, 19, 32, 0.76), rgba(10, 9, 17, 0.58)),
+    rgba(21, 19, 32, 0.58);
 }
 
 .popup-hero {
@@ -416,8 +424,8 @@ output {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 10px;
-  padding-bottom: 10px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -470,14 +478,14 @@ output {
   z-index: 1;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
+  gap: 7px;
 }
 
 .quick-tile {
   min-width: 0;
   margin: 0;
-  gap: 6px;
-  padding: 8px;
+  gap: 5px;
+  padding: 7px;
   border: 1px solid rgba(199, 138, 123, 0.34);
   border-radius: 8px;
   background: rgba(10, 9, 17, 0.46);
@@ -499,13 +507,13 @@ output {
 }
 
 .popup select {
-  min-height: 36px;
-  padding: 6px 10px;
+  min-height: 32px;
+  padding: 5px 9px;
 }
 
 .popup input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]) {
-  min-height: 36px;
-  padding: 6px 10px;
+  min-height: 32px;
+  padding: 5px 9px;
 }
 
 .popup input[type="range"] {
@@ -513,7 +521,7 @@ output {
 }
 
 .color-tile input {
-  height: 30px;
+  height: 28px;
 }
 
 .slider-tile > span {
@@ -523,7 +531,7 @@ output {
 .toggle-tile {
   display: grid;
   align-content: start;
-  gap: 12px;
+  gap: 9px;
 }
 
 .toggle-tile input[type="checkbox"] {
@@ -577,14 +585,15 @@ output {
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  margin-top: 8px;
-  padding-top: 8px;
+  margin-top: 7px;
+  padding-top: 7px;
   border-top: 1px solid var(--line);
 }
 
 .popup-footer > * {
   flex: 1;
-  padding: 7px 12px;
+  min-height: 34px;
+  padding: 6px 12px;
   text-align: center;
 }
 
