@@ -27,7 +27,7 @@ The extension stores settings in browser extension storage and applies them dire
 - Optional message navigator for jumping between turns, notes, code, files, and source-heavy messages.
 - Optional reasoning disclosure guard that keeps automatically opened reasoning panels collapsed unless you open them yourself.
 - Optional brand mask and brand image handling for ChatGPT's sidebar identity area.
-- Local conversation export to PDF, DOCX, Markdown, TXT, and JSON, with rendered-turn, selected-turn, or selected-text scope.
+- Local conversation export to PDF, DOCX, Markdown, TXT, and JSON, with full saved conversation, selected-message, loaded-page, or selected-text scope.
 - Settings import and export as JSON, plus single-theme import/export.
 
 ## Screenshots
@@ -146,7 +146,11 @@ DesignerGPT adds a local export control to ChatGPT conversations. The exporter c
 
 The export dialog includes filename, export scope, optional notes, visible sources and thinking, margins, font size, title/link, chat bubble, page number, and dark theme options where relevant. Markdown, TXT, and JSON can also be copied directly to the clipboard.
 
-Export scope can target all turns currently rendered by ChatGPT, individually selected rendered turns, or selected text. Very long conversations may need to be scrolled through first so ChatGPT renders their older turns.
+Export defaults to the full saved conversation. Nav and Export load every history page from ChatGPT using the current signed-in session, including messages no longer rendered on screen. Nav searches the full message text; its batch-size setting limits displayed rows, not the indexed history. Opening either tool refreshes its history snapshot. A Refresh action in Nav and a retry action in Export handle failed requests without silently producing partial results.
+
+Selected-message export can include older, unloaded messages. Loaded page only and selected-text scopes remain explicit alternatives. New or temporary conversations without a saved conversation ID use the rendered page. Media attachments are represented by their filenames or media placeholders, not embedded binaries. The loader exports the message sequence returned by ChatGPT's saved-history API, not every alternate response branch. It never persists the session access token. ChatGPT API changes or rate limits can temporarily prevent full-history loading.
+
+Nav scrolls directly to loaded messages. For unloaded messages it opens ChatGPT's native message link, in a new tab when an unsent composer draft is present. Resolving that link depends on ChatGPT's own navigation service.
 
 PDF export opens the browser print dialog, where the destination can be set to Save as PDF. DOCX export preserves supplementary Unicode such as emoji and applies the chosen margins, font size, and bubble treatment.
 

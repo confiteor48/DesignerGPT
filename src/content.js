@@ -21,6 +21,10 @@
   let defaultBackgroundLoad = null;
   let activeSettings = null;
   let exporterRoot = null;
+  const historyApi = globalThis.DesignerGPTHistory;
+  const historyReader = historyApi?.createReader();
+  let historyRoute = location.pathname;
+  let historyController = new AbortController();
 
   const defaults = {
     enabled: true,
@@ -3240,6 +3244,60 @@ html:not(.lcgs-image-viewer-active) [data-testid="webpage-citation-pill"] a:hove
     return conversation;
   }
 
+  function savedConversationId() {
+    return location.pathname.match(/\/c\/([a-z0-9-]{16,80})(?:\/|$)/i)?.[1] || null;
+  }
+
+  async function loadSavedConversation({ force = false, onProgress } = {}) {
+    syncHistoryRoute();
+    const id = savedConversationId();
+    if (!id) return null;
+    if (!historyReader) throw new Error("Reload DesignerGPT and refresh this page to enable full conversation history.");
+    const history = await historyReader.load(id, { force, onProgress, signal: historyController.signal });
+    if (savedConversationId() !== id) throw new Error("The conversation changed while history was loading.");
+    return history;
+  }
+
+  function syncHistoryRoute() {
+    if (historyRoute === location.pathname) return;
+    historyRoute = location.pathname;
+    historyController.abort();
+    historyController = new AbortController();
+    historyReader?.clear();
+    navigatorItems = [];
+    const modal = document.getElementById(EXPORT_MODAL_ID);
+    if (modal) {
+      modal.hidden = true;
+      modal.lcgsHistoryRequest = (modal.lcgsHistoryRequest || 0) + 1;
+    }
+    const nav = document.getElementById(NAVIGATOR_ID);
+    if (nav) {
+      nav.dataset.open = "false";
+      nav.lcgsRequest = (nav.lcgsRequest || 0) + 1;
+      nav.lcgsNavigatorFiltered = [];
+      nav.querySelector(".lcgs-tool-trigger")?.setAttribute("aria-expanded", "false");
+    }
+  }
+
+  function savedExportMessages(history, options) {
+    return history.messages.map((message) => {
+      const parts = message.parts.map((part) => ({ ...part }));
+      if (options.includeThinking && message.thinking) parts.unshift({ type: "text", text: `Thinking summary\n\n${message.thinking}` });
+      if (options.includeSources && message.sources.length) {
+        parts.push({ type: "text", text: "Sources\n" + message.sources.map((source) => source.url ? `- ${source.title} (${source.url})` : `- ${source.title}`).join("\n") });
+      }
+      return {
+        index: message.index,
+        role: message.role,
+        text: parts.map((part) => part.text).join("\n\n"),
+        parts,
+        messageId: message.messageId,
+        exportKey: message.exportKey,
+        noteKey: getMessageNoteKeyFromParts(message.role, message.messageId, message.text)
+      };
+    });
+  }
+
   async function getCurrentConversation(options = defaultExportOptions("txt")) {
     if (options.scope === "selection") {
       const selectedText = String(window.getSelection()?.toString() || "").trim();
@@ -3260,10 +3318,9 @@ html:not(.lcgs-image-viewer-active) [data-testid="webpage-citation-pill"] a:hove
       };
     }
 
-    const seen = new Set();
-    const messages = [];
-
-    readRenderedMessages(messages, seen, options);
+    const history = options.scope === "rendered" ? null : await loadSavedConversation();
+    const messages = history ? savedExportMessages(history, options) : [];
+    if (!history) readRenderedMessages(messages, new Set(), options);
     if (options.scope === "selected" && Array.isArray(options.selectedMessageKeys)) {
       const selected = new Set(options.selectedMessageKeys);
       messages.splice(0, messages.length, ...messages.filter((message) => selected.has(message.exportKey)));
@@ -3273,10 +3330,11 @@ html:not(.lcgs-image-viewer-active) [data-testid="webpage-citation-pill"] a:hove
     });
 
     return {
-      title: getConversationTitle(),
+      title: history?.title || getConversationTitle(),
       url: location.href,
       exportedAt: new Date().toISOString(),
       options,
+      historySource: history ? "complete-saved-conversation" : "rendered-page",
       messages
     };
   }
@@ -3327,7 +3385,10 @@ html:not(.lcgs-image-viewer-active) [data-testid="webpage-citation-pill"] a:hove
   function messagePartsToMarkdown(message) {
     return (message.parts || [{ type: "text", text: message.text }]).map((part) => {
       if (part.type === "code") {
-        return `\`\`\`${part.language || ""}\n${part.text}\n\`\`\``;
+        let fenceLength = 3;
+        for (const match of part.text.matchAll(/`+/g)) fenceLength = Math.max(fenceLength, match[0].length + 1);
+        const fence = "`".repeat(fenceLength);
+        return `${fence}${part.language || ""}\n${part.text}\n${fence}`;
       }
       return part.text;
     }).join("\n\n");
@@ -3625,21 +3686,61 @@ ${body}
     }
   }
 
-  function renderExportTurnPicker(modal) {
+  function renderExportPickerRows(modal) {
     const picker = modal.querySelector("#lcgs-export-turns");
-    if (!picker) return;
-    const messages = [];
-    readRenderedMessages(messages, new Set(), { includeSources: true, includeThinking: true });
-    modal.lcgsExportMessages = messages;
-    picker.innerHTML = messages.map((message, index) => {
+    const messages = modal.lcgsExportMessages || [];
+    const limit = modal.lcgsPickerLimit || 100;
+    picker.innerHTML = messages.slice(0, limit).map((message, index) => {
       const preview = message.text.replace(/\s+/g, " ").trim().slice(0, 90) || speakerLabel(message.role);
-      return `<label class="lcgs-turn-option"><input type="checkbox" data-turn-index="${index}" checked><span>${escapeHtml(`${index + 1}. ${speakerLabel(message.role)} - ${preview}`)}</span></label>`;
-    }).join("") || `<span class="lcgs-muted-line">No rendered turns found.</span>`;
+      return `<label class="lcgs-turn-option"><input type="checkbox" data-turn-index="${index}" ${modal.lcgsSelectedKeys.has(message.exportKey) ? "checked" : ""}><span>${escapeHtml(`${index + 1}. ${speakerLabel(message.role)} - ${preview}`)}</span></label>`;
+    }).join("") || `<span class="lcgs-muted-line">No messages found.</span>`;
+    if (messages.length > limit) picker.insertAdjacentHTML("beforeend", '<button type="button" data-more-turns>Show more messages</button>');
+    picker.querySelectorAll("input").forEach((input) => input.addEventListener("change", () => {
+      const key = messages[Number(input.dataset.turnIndex)].exportKey;
+      if (input.checked) modal.lcgsSelectedKeys.add(key);
+      else modal.lcgsSelectedKeys.delete(key);
+    }));
+    picker.querySelector("[data-more-turns]")?.addEventListener("click", () => {
+      modal.lcgsPickerLimit = limit + 100;
+      renderExportPickerRows(modal);
+    });
   }
 
-  function updateExportScope(modal) {
+  async function renderExportTurnPicker(modal, force = false) {
+    const request = (modal.lcgsHistoryRequest || 0) + 1;
+    modal.lcgsHistoryRequest = request;
+    const scope = modal.querySelector("#lcgs-export-scope").value;
+    const status = modal.querySelector("[data-history-status]");
+    const retry = modal.querySelector("[data-history-retry]");
+    const controls = [modal.querySelector("#lcgs-export-confirm"), modal.querySelector("#lcgs-export-copy")];
+    controls.forEach((button) => { button.disabled = true; });
+    retry.hidden = true;
+    status.textContent = "Loading conversation...";
+    try {
+      const history = ["rendered", "selection"].includes(scope) ? null : await loadSavedConversation({
+        force,
+        onProgress: (count) => { if (modal.lcgsHistoryRequest === request) status.textContent = `Loading history: ${count} records...`; }
+      });
+      if (modal.lcgsHistoryRequest !== request) return;
+      const messages = history ? savedExportMessages(history, {}) : [];
+      if (!history && scope !== "selection") readRenderedMessages(messages, new Set(), { includeSources: true });
+      modal.lcgsExportMessages = messages;
+      modal.lcgsSelectedKeys = new Set(messages.map((message) => message.exportKey));
+      modal.lcgsPickerLimit = 100;
+      if (scope === "selected") renderExportPickerRows(modal);
+      status.textContent = scope === "selection" ? "Selected text" : `${messages.length} messages${history ? " in the full conversation" : " loaded on this page"}`;
+      controls.forEach((button) => { button.disabled = false; });
+    } catch (error) {
+      if (modal.lcgsHistoryRequest !== request) return;
+      status.textContent = error.message || "Could not load the full conversation.";
+      retry.hidden = false;
+    }
+  }
+
+  function updateExportScope(modal, force = false) {
     const picker = modal.querySelector("#lcgs-export-turns");
     if (picker) picker.hidden = modal.querySelector("#lcgs-export-scope").value !== "selected";
+    renderExportTurnPicker(modal, force);
   }
 
   function ensureExportModal() {
@@ -3658,7 +3759,9 @@ ${body}
           <section class="lcgs-panel">
             <h3>Document</h3>
             <label>File name <input id="lcgs-export-filename" type="text"></label>
-            <label>Scope <select id="lcgs-export-scope"><option value="conversation">All rendered turns</option><option value="selected">Selected turns</option><option value="selection">Selected text</option></select></label>
+            <label>Scope <select id="lcgs-export-scope"><option value="conversation">Entire conversation</option><option value="selected">Selected messages</option><option value="rendered">Loaded page only</option><option value="selection">Selected text</option></select></label>
+            <span class="lcgs-history-status" data-history-status role="status"></span>
+            <button type="button" data-history-retry hidden>Retry loading history</button>
             <div id="lcgs-export-turns" class="lcgs-turn-picker" aria-label="Select turns" hidden></div>
             <label data-option="layout">Margins <select id="lcgs-export-margin"><option value="normal">Normal</option><option value="narrow">Narrow</option><option value="wide">Wide</option></select></label>
             <label data-option="layout">Font size <select id="lcgs-export-font-size"><option>12</option><option selected>14</option><option>16</option><option>18</option></select></label>
@@ -3668,8 +3771,8 @@ ${body}
             <label class="lcgs-toggle-row">Include title <input id="lcgs-export-include-title" type="checkbox" checked></label>
             <label class="lcgs-toggle-row">Include link <input id="lcgs-export-include-link" type="checkbox" checked></label>
             <label class="lcgs-toggle-row">Include notes <input id="lcgs-export-include-notes" type="checkbox"></label>
-            <label class="lcgs-toggle-row">Include visible sources <input id="lcgs-export-include-sources" type="checkbox" checked></label>
-            <label class="lcgs-toggle-row">Include visible thinking <input id="lcgs-export-include-thinking" type="checkbox"></label>
+            <label class="lcgs-toggle-row">Include sources <input id="lcgs-export-include-sources" type="checkbox" checked></label>
+            <label class="lcgs-toggle-row">Include thinking summaries <input id="lcgs-export-include-thinking" type="checkbox"></label>
             <label class="lcgs-toggle-row" data-option="visual">Add chat bubbles <input id="lcgs-export-chat-bubbles" type="checkbox" checked></label>
             <label class="lcgs-toggle-row" data-option="visual">Enable dark theme <input id="lcgs-export-dark-theme" type="checkbox" checked></label>
           </section>
@@ -3697,6 +3800,7 @@ ${body}
     });
 
     modal.querySelector("#lcgs-export-scope").addEventListener("change", () => updateExportScope(modal));
+    modal.querySelector("[data-history-retry]").addEventListener("click", () => renderExportTurnPicker(modal, true));
 
     modal.querySelector("#lcgs-export-confirm").addEventListener("click", async () => {
       const options = readExportOptions();
@@ -3710,6 +3814,7 @@ ${body}
         modal.hidden = true;
       } catch (error) {
         failed = true;
+        modal.querySelector("[data-history-status]").textContent = error.message || "Export failed.";
         printWindow?.close();
       } finally {
         confirm.textContent = failed ? "Try again" : options.format === "pdf" ? "Print PDF" : `Download ${options.format.toUpperCase()}`;
@@ -3727,6 +3832,7 @@ ${body}
         copy.textContent = "Copied";
       } catch (error) {
         copy.textContent = "Copy failed";
+        modal.querySelector("[data-history-status]").textContent = error.message || "Copy failed.";
       } finally {
         copy.disabled = false;
         setTimeout(() => { copy.textContent = "Copy"; }, 1200);
@@ -3754,8 +3860,7 @@ ${body}
     modal.querySelector("#lcgs-export-confirm").textContent = format === "pdf" ? "Print PDF" : `Download ${format === "md" ? "Markdown" : format.toUpperCase()}`;
     modal.querySelector("#lcgs-export-copy").hidden = !["md", "txt", "json"].includes(format);
     updateExportOptionAvailability(modal, format);
-    renderExportTurnPicker(modal);
-    updateExportScope(modal);
+    updateExportScope(modal, true);
     modal.hidden = false;
     modal.querySelector("#lcgs-export-filename").focus();
   }
@@ -3792,10 +3897,7 @@ ${body}
       includeThinking: modal.querySelector("#lcgs-export-include-thinking").checked,
       addChatBubbles: modal.querySelector("#lcgs-export-chat-bubbles").checked,
       darkTheme: modal.querySelector("#lcgs-export-dark-theme").checked,
-      selectedMessageKeys: Array.from(modal.querySelectorAll("#lcgs-export-turns input:checked"))
-        .map((input) => modal.lcgsExportMessages?.[Number(input.dataset.turnIndex)])
-        .filter(Boolean)
-        .map((message) => message.exportKey)
+      selectedMessageKeys: Array.from(modal.lcgsSelectedKeys || [])
     };
   }
 
@@ -3872,8 +3974,11 @@ ${body}
   function mountExporterInHeader(root) {
     const anchor = getHeaderActionAnchor();
     if (!anchor?.parentElement) return false;
-    if (root.parentElement !== anchor.parentElement || root.nextElementSibling !== anchor) {
-      anchor.parentElement.insertBefore(root, anchor);
+    const host = anchor.closest("#conversation-header-actions") || anchor.parentElement;
+    let before = anchor;
+    while (before.parentElement && before.parentElement !== host) before = before.parentElement;
+    if (root.parentElement !== host || root.nextElementSibling !== before) {
+      host.insertBefore(root, before);
     }
     return true;
   }
@@ -4342,8 +4447,7 @@ ${body}
         const roleNode = node.matches("[data-message-author-role]") ? node : node.querySelector("[data-message-author-role]");
         const role = node.getAttribute("data-turn") || roleNode?.getAttribute("data-message-author-role") || "";
         return role === "user" || role === "assistant" || role === "system";
-      })
-      .slice(0, activeSettings.navigatorLimit);
+      });
   }
 
   function getNavigatorPreview(node) {
@@ -4390,7 +4494,24 @@ ${body}
     labels.push(navigatorPlural(count, singular, plural));
   }
 
-  function getNavigatorItems() {
+  async function getNavigatorItems(force, onProgress) {
+    const history = await loadSavedConversation({ force, onProgress });
+    if (history) {
+      const messages = savedExportMessages(history, {});
+      const notes = await safeStorageGet(messages.map((message) => message.noteKey));
+      return history.messages.map((message, index) => {
+        const labels = [];
+        const scopes = [];
+        const counts = {};
+        addNavigatorScope(labels, scopes, counts, "note", notes[messages[index].noteKey] ? 1 : 0, "note");
+        addNavigatorScope(labels, scopes, counts, "code", message.parts.filter((part) => part.type === "code").length, "code block");
+        addNavigatorScope(labels, scopes, counts, "sources", message.sources.length, "source");
+        addNavigatorScope(labels, scopes, counts, "files", message.fileCount, "file");
+        return { id: message.messageId, messageId: message.messageId, role: message.role,
+          index: message.index, text: message.text.replace(/\s+/g, " ").slice(0, 220),
+          searchText: message.text, labels, scopes, counts };
+      });
+    }
     return getNavigatorTargets().map((node, index) => {
       const roleNode = node.matches("[data-message-author-role]") ? node : node.querySelector("[data-message-author-role]");
       const role = node.getAttribute("data-turn") || roleNode?.getAttribute("data-message-author-role") || "message";
@@ -4445,6 +4566,7 @@ ${body}
         role,
         index: index + 1,
         text: text || role,
+        searchText: node.textContent || text,
         labels,
         scopes,
         counts
@@ -4459,6 +4581,16 @@ ${body}
   }
 
   function focusNavigatorItem(item) {
+    if (item?.messageId) {
+      item.node = Array.from(document.querySelectorAll("[data-message-id]")).find((node) => node.dataset.messageId === item.messageId);
+      if (!item.node) {
+        const url = new URL(location.href);
+        url.searchParams.set("messageId", item.messageId);
+        if (getComposerText().trim()) window.open(url.href, "_blank", "noopener,noreferrer");
+        else location.assign(url.href);
+        return true;
+      }
+    }
     if (!item?.node?.isConnected) return false;
     const visible = scrollNavigatorNodeIntoView(item.node);
     item.node.style.setProperty("outline", `2px solid ${activeSettings.accentColor || "#8fb3c7"}`, "important");
@@ -4508,15 +4640,37 @@ ${body}
     if (!copied) throw clipboardError || new Error("Clipboard copy failed.");
   }
 
-  function renderNavigatorPanel() {
+  async function renderNavigatorPanel(force = false, showMore = false) {
     const root = document.getElementById(NAVIGATOR_ID);
     const list = root?.querySelector(".lcgs-nav-list");
     if (!list) return;
-    navigatorItems = getNavigatorItems();
+    const request = (root.lcgsRequest || 0) + 1;
+    root.lcgsRequest = request;
+    const status = root.querySelector("[data-nav-status]");
+    const copy = root.querySelector("[data-nav-copy]");
+    copy.disabled = true;
+    status.textContent = "Loading conversation...";
+    list.innerHTML = "";
+    try {
+      const items = await getNavigatorItems(force === true, (count) => {
+        if (root.lcgsRequest === request) status.textContent = `Loading history: ${count} records...`;
+      });
+      if (root.lcgsRequest !== request) return;
+      navigatorItems = items;
+    } catch (error) {
+      if (root.lcgsRequest !== request) return;
+      root.lcgsNavigatorFiltered = [];
+      root.querySelector(".lcgs-nav-stats").textContent = "";
+      status.textContent = error.message || "Could not load conversation history.";
+      return;
+    }
+    copy.disabled = false;
+    status.textContent = savedConversationId() ? "Full saved conversation" : "Messages loaded on this page";
+    root.lcgsRowLimit = showMore ? (root.lcgsRowLimit || activeSettings.navigatorLimit) + activeSettings.navigatorLimit : activeSettings.navigatorLimit;
     const query = String(root.querySelector("[data-nav-filter]")?.value || "").toLowerCase().trim();
     const scope = root.dataset.scope || "all";
     const filtered = navigatorItems.filter((item) => {
-      const haystack = `${item.role} ${item.text} ${item.labels.join(" ")} ${item.scopes.join(" ")}`.toLowerCase();
+      const haystack = `${item.role} ${item.searchText || item.text} ${item.labels.join(" ")} ${item.scopes.join(" ")}`.toLowerCase();
       const scopeMatch = scope === "all" || item.scopes.includes(scope);
       return scopeMatch && (!query || haystack.includes(query));
     });
@@ -4542,7 +4696,7 @@ ${body}
       `;
     }
     list.innerHTML = filtered.length
-      ? filtered.map((item, index) => `
+      ? filtered.slice(0, root.lcgsRowLimit).map((item, index) => `
           <button type="button" class="lcgs-nav-row" data-nav-index="${index}">
             <span class="lcgs-nav-index">${escapeHtml(item.role.slice(0, 1).toUpperCase())}${item.index}</span>
             <span class="lcgs-nav-main">
@@ -4552,6 +4706,13 @@ ${body}
           </button>
         `).join("")
       : `<div class="lcgs-muted-line">No matching turns.</div>`;
+    if (filtered.length > root.lcgsRowLimit) {
+      list.insertAdjacentHTML("beforeend", '<button type="button" data-nav-more>Show more messages</button>');
+      list.querySelector("[data-nav-more]").addEventListener("click", (event) => {
+        event.stopPropagation();
+        renderNavigatorPanel(false, true);
+      });
+    }
     list.querySelectorAll("[data-nav-index]").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.preventDefault();
@@ -4593,7 +4754,9 @@ ${body}
           </div>
           <div class="lcgs-nav-actions">
             <button type="button" class="lcgs-nav-copy" data-nav-copy>Copy outline</button>
+            <button type="button" class="lcgs-nav-copy" data-nav-refresh>Refresh</button>
           </div>
+          <div class="lcgs-muted-line" data-nav-status role="status"></div>
           <div class="lcgs-nav-stats"></div>
         </div>
         <div class="lcgs-nav-list"></div>
@@ -4604,11 +4767,12 @@ ${body}
     const setOpen = (open) => {
       root.dataset.open = String(open);
       trigger.setAttribute("aria-expanded", String(open));
-      if (open) renderNavigatorPanel();
+      if (open) renderNavigatorPanel(true);
     };
     trigger.addEventListener("click", () => setOpen(root.dataset.open !== "true"));
     root.querySelector(".lcgs-panel-close").addEventListener("click", () => setOpen(false));
     root.querySelector("[data-nav-filter]").addEventListener("input", renderNavigatorPanel);
+    root.querySelector("[data-nav-refresh]").addEventListener("click", () => renderNavigatorPanel(true));
     root.querySelectorAll("[data-nav-scope]").forEach((button) => {
       button.addEventListener("click", () => {
         root.dataset.scope = button.dataset.navScope || "all";
@@ -5438,6 +5602,7 @@ ${body}
   }
 
   function updateDynamicPageModes() {
+    syncHistoryRoute();
     dynamicPageModesScheduled = false;
     updateRouteClasses();
     updateSidebarSectionLabels();

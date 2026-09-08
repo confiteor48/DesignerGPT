@@ -45,7 +45,7 @@ async function createRouteFixture(pathname, markup) {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.setContent(`<!doctype html><html><head><title>Fixture - ChatGPT</title></head><body>
-    <header id="page-header"><div data-testid="thread-header-right-actions-container" style="overflow:hidden"><div data-testid="thread-header-right-actions" style="overflow:hidden"><div id="conversation-header-actions"><div id="header-actions" class="flex"><button data-testid="share-chat-button">Share</button><button aria-label="More">...</button></div></div></div></div></header>
+    <header id="page-header"><div data-testid="thread-header-right-actions-container" style="overflow:hidden"><div data-testid="thread-header-right-actions" style="overflow:hidden"><div id="conversation-header-actions" style="display:flex;align-items:center;gap:4px"><div id="header-actions" class="flex" style="display:flex;align-items:center"><button data-testid="share-chat-button" style="height:32px">Share</button><button aria-label="More">...</button></div></div></div></div></header>
     <main id="main">
       <div id="thread">
         <section data-turn="user"><div data-message-author-role="user" data-message-id="u1"><div class="user-message-bubble-color">First prompt</div></div></section>
@@ -84,7 +84,17 @@ async function createRouteFixture(pathname, markup) {
 
   const toolbar = page.locator("#local-chatgpt-styler-export");
   assert.strictEqual(await toolbar.isVisible(), true, "toolbar should be visible in a conversation");
-  assert.strictEqual(await toolbar.evaluate((node) => node.nextElementSibling?.getAttribute("data-testid")), "share-chat-button", "toolbar should sit before the current Share control");
+  assert.strictEqual(await toolbar.evaluate((node) => node.parentElement.id), "conversation-header-actions", "toolbar must share the native flex alignment context");
+  assert.strictEqual(await toolbar.evaluate((node) => Boolean(node.nextElementSibling?.querySelector('[data-testid="share-chat-button"]'))), true, "toolbar should sit before the current Share controls");
+  for (const promptTools of [true, false, true]) {
+    await page.evaluate((promptTools) => window.postMessage({ type: "LCGS_APPLY_SETTINGS", settings: { enabled: true, promptTools, messageNavigator: true } }, "*"), promptTools);
+    await page.waitForTimeout(100);
+    assert.ok(await toolbar.evaluate((node) => {
+      const a = node.getBoundingClientRect();
+      const b = document.querySelector('[data-testid="share-chat-button"]').getBoundingClientRect();
+      return Math.abs((a.top + a.bottom - b.top - b.bottom) / 2) < 1;
+    }), "toolbar and Share centers must align with Prompt on or off");
+  }
   assert.strictEqual(await page.locator("[data-testid='send-button']").getAttribute("data-lcgs-action-control"), null, "send must not be themed as a message action");
   assert.strictEqual(await page.locator("[data-testid='copy-turn-action-button']").getAttribute("data-lcgs-action-control"), "icon", "known message action should be marked");
   assert.strictEqual(await page.locator("[data-lcgs-disclaimer='true']").isVisible(), false, "disclaimer should be hidden");
