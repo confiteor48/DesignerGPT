@@ -45,7 +45,7 @@ async function createRouteFixture(pathname, markup) {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.setContent(`<!doctype html><html><head><title>Fixture - ChatGPT</title></head><body>
-    <header id="page-header"><div id="header-actions" class="flex"><button data-testid="share-chat-button">Share</button><button aria-label="More">...</button></div></header>
+    <header id="page-header"><div data-testid="thread-header-right-actions-container" style="overflow:hidden"><div data-testid="thread-header-right-actions" style="overflow:hidden"><div id="conversation-header-actions"><div id="header-actions" class="flex"><button data-testid="share-chat-button">Share</button><button aria-label="More">...</button></div></div></div></div></header>
     <main id="main">
       <div id="thread">
         <section data-turn="user"><div data-message-author-role="user" data-message-id="u1"><div class="user-message-bubble-color">First prompt</div></div></section>
@@ -91,6 +91,12 @@ async function createRouteFixture(pathname, markup) {
 
   await page.getByRole("button", { name: "Nav" }).click();
   assert.strictEqual(await page.locator("#local-chatgpt-styler-navigator").getAttribute("data-open"), "true", "navigator should open");
+  assert.strictEqual(await page.locator("[data-testid='thread-header-right-actions']").evaluate((node) => getComputedStyle(node).overflowX), "visible", "header wrappers must not clip DesignerGPT panels");
+  assert.strictEqual(await page.locator("#local-chatgpt-styler-navigator .lcgs-tool-panel").evaluate((panel) => {
+    const rect = panel.getBoundingClientRect();
+    const hit = document.elementFromPoint(rect.left + Math.min(20, rect.width / 2), rect.top + Math.min(20, rect.height / 2));
+    return Boolean(hit && panel.contains(hit));
+  }), true, "navigator panel must be reachable outside the header bounds");
   assert.match(await page.locator(".lcgs-nav-stats").innerText(), /9 files/, "navigator should count each attachment");
   await page.locator(".lcgs-nav-row").nth(1).click();
   assert.strictEqual(await page.locator("#local-chatgpt-styler-navigator").getAttribute("data-open"), "false", "navigator should close after a jump");

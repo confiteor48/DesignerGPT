@@ -2092,6 +2092,14 @@ html.lcgs-compact-sidebar-active [data-lcgs-profile-status="true"] {
   display: none !important;
 }
 
+:is(#page-header, #calpico-page-header) :is(
+  [data-testid="thread-header-right-actions-container"],
+  [data-testid="thread-header-right-actions"],
+  #conversation-header-actions
+) {
+  overflow: visible !important;
+}
+
 #${EXPORT_ID} button {
   appearance: none;
   display: inline-flex;
@@ -2128,9 +2136,10 @@ main#main [data-lcgs-disclaimer="true"] {
 }
 
 #${EXPORT_ID} .lcgs-export-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
+  position: fixed;
+  top: calc(var(--header-height, 52px) + 8px);
+  right: 16px;
+  z-index: 2147483000;
   display: none;
   min-width: 180px;
   padding: 10px;
@@ -2226,11 +2235,12 @@ main#main [data-lcgs-disclaimer="true"] {
 #${NAVIGATOR_ID} .lcgs-tool-panel,
 #${SLASH_PALETTE_ID} {
   display: none;
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
+  position: fixed;
+  top: calc(var(--header-height, 52px) + 8px);
+  right: 16px;
+  z-index: 2147483000;
   width: min(380px, calc(100vw - 32px));
-  margin-top: 8px;
+  margin-top: 0;
   border: 1px solid color-mix(in srgb, var(--lcgs-border) 72%, transparent);
   border-radius: 12px;
   background: color-mix(in srgb, var(--lcgs-sidebar-bg) 94%, #000 6%);
