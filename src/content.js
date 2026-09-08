@@ -3656,7 +3656,7 @@ ${body}
     };
   }
 
-  async function exportConversation(options) {
+  async function exportConversation(options, { printWindow = null, copyOnly = false } = {}) {
     const format = options.format;
     const conversation = await getCurrentConversation(options);
     await attachExportNotes(conversation);
@@ -3665,25 +3665,32 @@ ${body}
     });
     const filename = sanitizeFilename(options.filename.replace(/\.[^.]+$/, ""));
     if (!conversation.messages.length) {
-      alert(options.scope === "selection" ? "No selected text found to export." : "No chat messages found to export.");
-      return;
+      throw new Error(options.scope === "selection" ? "No selected text found to export." : options.scope === "selected" ? "Select at least one message to export." : "No chat messages found to export.");
     }
 
     const artifacts = {
-      json: ["application/json;charset=utf-8", JSON.stringify(conversation, null, 2)],
-      md: ["text/markdown;charset=utf-8", conversationToMarkdown(conversation)],
-      txt: ["text/plain;charset=utf-8", conversationToText(conversation)]
+      json: ["application/json;charset=utf-8", () => JSON.stringify(conversation, null, 2)],
+      md: ["text/markdown;charset=utf-8", () => conversationToMarkdown(conversation)],
+      txt: ["text/plain;charset=utf-8", () => conversationToText(conversation)]
     };
-    if (options.copyOnly && artifacts[format]) {
-      await copyTextToClipboard(artifacts[format][1]);
+    if (copyOnly && artifacts[format]) {
+      await copyTextToClipboard(artifacts[format][1]());
     } else if (artifacts[format]) {
-      downloadBlob(`${filename}.${format}`, artifacts[format][0], artifacts[format][1]);
+      downloadBlob(`${filename}.${format}`, artifacts[format][0], artifacts[format][1]());
     } else if (format === "docx") {
       downloadBlob(`${filename}.docx`, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", createDocx(conversation));
     } else if (format === "pdf") {
       conversation.printFilename = filename;
-      printConversation(conversation, options.printWindow);
+      printConversation(conversation, printWindow);
     }
+  }
+
+  function updateExportSelectionState(modal) {
+    if (modal.querySelector("#lcgs-export-scope").value !== "selected") return;
+    const selected = modal.lcgsSelectedKeys?.size || 0;
+    modal.querySelector("[data-history-status]").textContent = `${selected} of ${modal.lcgsExportMessages?.length || 0} messages selected`;
+    modal.querySelector("#lcgs-export-confirm").disabled = !selected;
+    modal.querySelector("#lcgs-export-copy").disabled = !selected;
   }
 
   function renderExportPickerRows(modal) {
@@ -3697,8 +3704,14 @@ ${body}
     if (messages.length > limit) picker.insertAdjacentHTML("beforeend", '<button type="button" data-more-turns>Show more messages</button>');
     picker.querySelectorAll("input").forEach((input) => input.addEventListener("change", () => {
       const key = messages[Number(input.dataset.turnIndex)].exportKey;
-      if (input.checked) modal.lcgsSelectedKeys.add(key);
-      else modal.lcgsSelectedKeys.delete(key);
+      if (input.checked) {
+        modal.lcgsSelectedKeys.add(key);
+        modal.lcgsExcludedKeys.delete(key);
+      } else {
+        modal.lcgsSelectedKeys.delete(key);
+        modal.lcgsExcludedKeys.add(key);
+      }
+      updateExportSelectionState(modal);
     }));
     picker.querySelector("[data-more-turns]")?.addEventListener("click", () => {
       modal.lcgsPickerLimit = limit + 100;
@@ -3725,11 +3738,15 @@ ${body}
       const messages = history ? savedExportMessages(history, {}) : [];
       if (!history && scope !== "selection") readRenderedMessages(messages, new Set(), { includeSources: true });
       modal.lcgsExportMessages = messages;
-      modal.lcgsSelectedKeys = new Set(messages.map((message) => message.exportKey));
+      if (scope !== "selection" && scope !== "rendered") {
+        const excluded = modal.lcgsExcludedKeys || new Set();
+        modal.lcgsSelectedKeys = new Set(messages.filter((message) => !excluded.has(message.exportKey)).map((message) => message.exportKey));
+      }
       modal.lcgsPickerLimit = 100;
       if (scope === "selected") renderExportPickerRows(modal);
       status.textContent = scope === "selection" ? "Selected text" : `${messages.length} messages${history ? " in the full conversation" : " loaded on this page"}`;
       controls.forEach((button) => { button.disabled = false; });
+      updateExportSelectionState(modal);
     } catch (error) {
       if (modal.lcgsHistoryRequest !== request) return;
       status.textContent = error.message || "Could not load the full conversation.";
@@ -3810,7 +3827,7 @@ ${body}
       confirm.textContent = "Exporting...";
       confirm.disabled = true;
       try {
-        await exportConversation({ ...options, printWindow });
+        await exportConversation(options, { printWindow });
         modal.hidden = true;
       } catch (error) {
         failed = true;
@@ -3823,12 +3840,12 @@ ${body}
     });
 
     modal.querySelector("#lcgs-export-copy").addEventListener("click", async () => {
-      const options = { ...readExportOptions(), copyOnly: true };
+      const options = readExportOptions();
       const copy = modal.querySelector("#lcgs-export-copy");
       copy.textContent = "Copying...";
       copy.disabled = true;
       try {
-        await exportConversation(options);
+        await exportConversation(options, { copyOnly: true });
         copy.textContent = "Copied";
       } catch (error) {
         copy.textContent = "Copy failed";
@@ -3843,6 +3860,7 @@ ${body}
   function openExportModal(format) {
     ensureExportModal();
     const modal = document.getElementById(EXPORT_MODAL_ID);
+    modal.lcgsExcludedKeys = new Set();
     const options = defaultExportOptions(format);
     modal.dataset.format = format;
     modal.querySelector("#lcgs-export-title").textContent = `Export options: ${format === "md" ? "Markdown" : format.toUpperCase()}`;

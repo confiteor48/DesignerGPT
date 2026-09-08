@@ -139,6 +139,15 @@ async function createRouteFixture(pathname, markup) {
   assert.strictEqual(await page.locator("#lcgs-export-turns input").count(), 3, "turn picker should list each message once");
   assert.strictEqual(await page.locator("#lcgs-export-copy").isVisible(), true, "text formats should support clipboard export");
   await page.locator("#lcgs-export-turns input").first().uncheck();
+  await page.locator("#lcgs-export-scope").selectOption("conversation");
+  await page.locator("#lcgs-export-scope").selectOption("selected");
+  assert.strictEqual(await page.locator("#lcgs-export-turns input").first().isChecked(), false, "scope changes must preserve exclusions");
+  assert.match(await page.locator("[data-history-status]").innerText(), /2 of 3 messages selected/);
+  for (const input of await page.locator("#lcgs-export-turns input").all()) await input.uncheck();
+  assert.strictEqual(await page.locator("#lcgs-export-confirm").isDisabled(), true, "empty selection must disable export");
+  assert.strictEqual(await page.locator("#lcgs-export-copy").isDisabled(), true, "empty selection must disable copying");
+  await page.locator("#lcgs-export-turns input").nth(1).check();
+  await page.locator("#lcgs-export-turns input").nth(2).check();
 
   await page.waitForTimeout(5000);
   await page.screenshot({ path: outputPath, fullPage: false });
@@ -182,6 +191,27 @@ async function createRouteFixture(pathname, markup) {
   assert.match(docxRaw, /w:pgMar w:top="720"/, "DOCX should honor narrow margins");
   assert.match(docxRaw, /w:sz w:val="36"/, "DOCX should honor font size");
   assert.match(docxRaw, /w:shd w:fill="F1EDF4"/, "DOCX should render assistant bubbles");
+
+  await page.evaluate(() => {
+    const open = window.open.bind(window);
+    window.open = (...args) => {
+      const popup = open(...args);
+      window.lcgsPrintPopup = popup;
+      popup.print = () => { window.lcgsPrintedHtml = popup.document.documentElement.outerHTML; };
+      return popup;
+    };
+  });
+  await page.getByRole("button", { name: "Download" }).click();
+  await page.locator("button[data-format='pdf']").click();
+  await page.locator("#lcgs-export-scope").selectOption("selected");
+  await page.locator("#lcgs-export-turns input").first().uncheck();
+  await page.locator("#lcgs-export-confirm").click();
+  await page.waitForFunction(() => Boolean(window.lcgsPrintedHtml), { timeout: 3000 });
+  const printedHtml = await page.evaluate(() => window.lcgsPrintedHtml);
+  assert.doesNotMatch(printedHtml, /First prompt/, "PDF must exclude unchecked messages");
+  assert.match(printedHtml, /First answer/, "PDF must include checked messages");
+  assert.strictEqual(await page.locator("#local-chatgpt-styler-export-modal").isVisible(), false);
+  await page.evaluate(() => window.lcgsPrintPopup.close());
 
   await page.evaluate(() => document.documentElement.classList.add("lcgs-zen-mode-active"));
   assert.strictEqual(await toolbar.isVisible(), false, "Zen should hide the toolbar");
