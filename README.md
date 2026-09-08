@@ -10,8 +10,8 @@ The extension stores settings in browser extension storage and applies them dire
 
 ## Features
 
-- Floating popup with quick controls for theme, brand mask, accent, page color, bubble colors, font, text size, chat width, compact sidebar, Zen mode, and local notes.
-- Full settings page with three tabs: Theme, Chat, and Branding.
+- Compact popup with quick controls for theme, brand mask, key colors, typography, chat width, compact sidebar, Zen mode, local notes, prompt tools, and the message navigator.
+- Full settings page with four tabs: Theme, Chat, Branding, and Advanced.
 - Read-only theme presets plus a persistent Custom theme for personal edits.
 - Readability presets for compact, comfortable, focused, and wide chat layouts.
 - Font family, text size, line height, chat width, and corner radius controls.
@@ -25,9 +25,9 @@ The extension stores settings in browser extension storage and applies them dire
 - Optional local prompt snippets with slash-command insertion from the ChatGPT composer.
 - Optional local prompt history recall with Ctrl/Cmd + Up/Down in the composer.
 - Optional message navigator for jumping between turns, notes, code, files, and source-heavy messages.
-- Reasoning disclosure guard that keeps automatically opened reasoning panels collapsed unless you open them yourself.
+- Optional reasoning disclosure guard that keeps automatically opened reasoning panels collapsed unless you open them yourself.
 - Optional brand mask and brand image handling for ChatGPT's sidebar identity area.
-- Local conversation export to PDF, DOCX, Markdown, TXT, and JSON, with full conversation, visible-message, or selected-text scope.
+- Local conversation export to PDF, DOCX, Markdown, TXT, and JSON, with rendered-turn, selected-turn, or selected-text scope.
 - Settings import and export as JSON, plus single-theme import/export.
 
 ## Screenshots
@@ -68,7 +68,7 @@ Use the full settings page when you need the complete set of controls:
 
 ## Workspace Modes
 
-Zen mode hides DesignerGPT's floating export control while it is active and leaves the page focused on the conversation.
+Zen mode removes DesignerGPT's toolbar and panels along with message action, source, attachment, citation, memory-update, and timestamp controls. The conversation and composer remain available.
 
 Advanced safe mode disables DesignerGPT's runtime widgets while keeping the core page styling available. It is intended as a quick escape hatch for local notes, prompt tools, prompt history, and the message navigator.
 
@@ -80,7 +80,7 @@ Prompt history can be enabled separately from Advanced. Sent prompts are remembe
 
 Message navigator can be enabled from Advanced. It adds a compact Nav control near the top ChatGPT action area, filters the visible turns, and can jump directly to messages with notes, code blocks, sources, or files. Scope chips can narrow the list to All, Notes, Code, Sources, or Files, and Copy outline copies the currently filtered map. The indexing limit is configurable for long conversations.
 
-DesignerGPT also guards reasoning disclosure panels from untrusted automatic expansion. If you open a reasoning panel yourself, it stays available.
+DesignerGPT can also guard reasoning disclosure panels from automatic expansion. If you open a reasoning panel yourself, it stays available. This guard is separately toggleable in Advanced and is disabled by advanced safe mode.
 
 ## Themes And Custom
 
@@ -140,9 +140,11 @@ DesignerGPT adds a local export control to ChatGPT conversations. The exporter c
 - TXT
 - JSON
 
-The export dialog includes filename, export scope, optional notes, margin, font size, title/link, chat bubble, page number, and dark theme options where relevant.
+The export dialog includes filename, export scope, optional notes, visible sources and thinking, margins, font size, title/link, chat bubble, page number, and dark theme options where relevant. Markdown, TXT, and JSON can also be copied directly to the clipboard.
 
-Export scope can target the full conversation, only the messages currently visible on the page, or selected text.
+Export scope can target all turns currently rendered by ChatGPT, individually selected rendered turns, or selected text. Very long conversations may need to be scrolled through first so ChatGPT renders their older turns.
+
+PDF export opens the browser print dialog, where the destination can be set to Save as PDF. DOCX export preserves supplementary Unicode such as emoji and applies the chosen margins, font size, and bubble treatment.
 
 When notes are enabled for export, conversation notes and message-level notes are included in the downloaded file.
 
@@ -187,7 +189,7 @@ Settings are stored under this key:
 localChatgptStylerSettings
 ```
 
-Use the Branding tab to export a JSON backup before making large manual changes. Use Export Theme when you only want to share the current visual theme without the enabled state or other full-settings metadata.
+Use the Advanced tab to export a JSON backup before making large manual changes. Use Export Theme when you only want to share the current visual theme without the enabled state or other full-settings metadata.
 
 ## Troubleshooting
 
