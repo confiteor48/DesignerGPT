@@ -5349,6 +5349,7 @@ ${body}
     updateSplashHeading();
     updateCustomFavicon(activeSettings);
     updateNotesPanel(activeSettings);
+    updateExporterVisibility();
     updatePromptToolkitVisibility();
     updateNavigatorVisibility();
   }

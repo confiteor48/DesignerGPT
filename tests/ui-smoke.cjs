@@ -160,6 +160,30 @@ async function createRouteFixture(pathname, markup) {
 
   assert.deepStrictEqual(errors, [], `page errors: ${errors.join("; ")}`);
 
+  const lateConversation = await browser.newPage({ viewport: { width: 1200, height: 800 } });
+  await lateConversation.setContent('<!doctype html><html><body><main id="main"></main></body></html>');
+  await lateConversation.evaluate(() => {
+    window.chrome = {
+      runtime: { getURL: () => "", lastError: null },
+      storage: {
+        local: { get: (_keys, callback) => callback({ localChatgptStylerSettings: { enabled: true, theme: "default", backgroundMode: "solid", promptTools: true, messageNavigator: true } }), set: (_values, callback) => callback?.(), remove: (_keys, callback) => callback?.() },
+        onChanged: { addListener: () => {} }
+      }
+    };
+  });
+  await lateConversation.addScriptTag({ path: contentScript });
+  await lateConversation.evaluate(() => {
+    document.body.insertAdjacentHTML("afterbegin", '<header id="page-header"><div><button data-testid="share-chat-button">Share</button></div></header>');
+    document.querySelector("#main").innerHTML = '<div id="thread"><section data-turn="assistant"><div data-message-author-role="assistant" data-message-id="late-a1"><div class="markdown">Loaded after navigation</div></div></section></div><form><div id="prompt-textarea" contenteditable="true" role="textbox"></div></form>';
+  });
+  await lateConversation.waitForTimeout(300);
+  const lateToolbar = lateConversation.locator("#local-chatgpt-styler-export");
+  assert.strictEqual(await lateToolbar.isVisible(), true, "toolbar should remount when a conversation arrives after initial load");
+  assert.strictEqual(await lateToolbar.evaluate((node) => node.nextElementSibling?.getAttribute("data-testid")), "share-chat-button", "late toolbar should mount before Share");
+  assert.strictEqual(await lateConversation.getByRole("button", { name: "Prompt", exact: true }).isVisible(), true, "Prompt should appear after SPA navigation");
+  assert.strictEqual(await lateConversation.getByRole("button", { name: "Nav", exact: true }).isVisible(), true, "Nav should appear after SPA navigation");
+  await lateConversation.close();
+
   const work = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await work.setContent(`<!doctype html><html><body><main id="main"><div id="thread" class="group/thread"><div><h1>What should we work on?</h1><img alt="Work"><h2>Meet ChatGPT Work</h2><button><svg></svg>Start</button></div><form><div id="prompt-textarea" contenteditable="true"></div></form><div class="popover bg-token-main-surface-primary"><div class="__menu-item">Add photos &amp; files</div></div></div></main></body></html>`);
   await work.evaluate(() => {
