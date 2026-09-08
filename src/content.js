@@ -1745,7 +1745,10 @@ main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search li
 
 main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) [data-testid="artifacts-surface-top-controls-shell"],
 main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) [data-testid="artifacts-surface-top-controls"],
-main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) [data-testid="artifacts-surface-top-controls-shell-inner"] {
+main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) [data-testid="artifacts-surface-top-controls-shell-inner"],
+main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) [data-testid="artifacts-surface-library-toolbar-controls"],
+main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) [data-testid="page-table-toolbar-shell"],
+main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) [data-testid="page-table-toolbar-shell-inner"] {
   --main-surface-primary: transparent !important;
   --token-main-surface-primary: transparent !important;
   background: transparent !important;
@@ -3752,8 +3755,10 @@ ${body}
       const buttons = Array.from(region.querySelectorAll("button, a[role='button'], [role='button']"));
       const anchor = buttons.find((button) => {
         if (button.closest(`#${EXPORT_ID}, [role='dialog']`)) return false;
-        const label = `${button.getAttribute("aria-label") || ""} ${button.getAttribute("data-testid") || ""} ${button.textContent || ""}`;
-        return /^\s*share(?:\s+share)?\s*$/i.test(label);
+        const ariaLabel = button.getAttribute("aria-label")?.trim() || "";
+        const testId = button.getAttribute("data-testid")?.trim() || "";
+        const text = button.textContent?.replace(/\s+/g, " ").trim() || "";
+        return /^share$/i.test(ariaLabel) || /^share$/i.test(text) || testId === "share-chat-button";
       });
       if (anchor?.parentElement) return anchor;
     }
@@ -4718,7 +4723,7 @@ ${body}
   }
 
   function updateNotesPanel(settings) {
-    const enabled = Boolean(settings.enabled && settings.localNotes && !settings.advancedSafeMode);
+    const enabled = Boolean(settings.enabled && settings.localNotes && !settings.advancedSafeMode && hasExportableConversation());
     if (!enabled) {
       const panel = document.getElementById(NOTES_ID);
       if (panel) panel.hidden = true;
@@ -5319,8 +5324,10 @@ ${body}
   }
 
   function updateSplashHeading() {
-    const matches = Array.from(document.querySelectorAll("main#main h1"))
-      .filter((heading) => /^How can I help\b/i.test(heading.textContent?.trim() || ""));
+    const matches = hasExportableConversation()
+      ? []
+      : Array.from(document.querySelectorAll("main#main h1"))
+        .filter((heading) => /^(?:How can I help|Where should we begin)\b/i.test(heading.textContent?.trim() || ""));
     document.querySelectorAll("[data-lcgs-splash-heading]").forEach((heading) => {
       if (!matches.includes(heading)) heading.removeAttribute("data-lcgs-splash-heading");
     });

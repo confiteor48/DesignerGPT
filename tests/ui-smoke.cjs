@@ -27,7 +27,7 @@ async function createRouteFixture(pathname, markup) {
     window.chrome = {
       runtime: { getURL: () => "", lastError: null },
       storage: {
-        local: { get: (_keys, callback) => callback({ localChatgptStylerSettings: { enabled: true, theme: "default", backgroundMode: "solid" } }), set: (_values, callback) => callback?.(), remove: (_keys, callback) => callback?.() },
+        local: { get: (_keys, callback) => callback({ localChatgptStylerSettings: { enabled: true, theme: "default", backgroundMode: "solid", localNotes: true } }), set: (_values, callback) => callback?.(), remove: (_keys, callback) => callback?.() },
         onChanged: { addListener: () => {} }
       }
     };
@@ -45,7 +45,7 @@ async function createRouteFixture(pathname, markup) {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.setContent(`<!doctype html><html><head><title>Fixture - ChatGPT</title></head><body>
-    <header id="page-header"><div id="header-actions" class="flex"><button aria-label="Share">Share</button><button aria-label="More">...</button></div></header>
+    <header id="page-header"><div id="header-actions" class="flex"><button data-testid="share-chat-button">Share</button><button aria-label="More">...</button></div></header>
     <main id="main">
       <div id="thread">
         <section data-turn="user"><div data-message-author-role="user" data-message-id="u1"><div class="user-message-bubble-color">First prompt</div></div></section>
@@ -84,7 +84,7 @@ async function createRouteFixture(pathname, markup) {
 
   const toolbar = page.locator("#local-chatgpt-styler-export");
   assert.strictEqual(await toolbar.isVisible(), true, "toolbar should be visible in a conversation");
-  assert.strictEqual(await toolbar.evaluate((node) => node.nextElementSibling?.getAttribute("aria-label")), "Share", "toolbar should sit before Share");
+  assert.strictEqual(await toolbar.evaluate((node) => node.nextElementSibling?.getAttribute("data-testid")), "share-chat-button", "toolbar should sit before the current Share control");
   assert.strictEqual(await page.locator("[data-testid='send-button']").getAttribute("data-lcgs-action-control"), null, "send must not be themed as a message action");
   assert.strictEqual(await page.locator("[data-testid='copy-turn-action-button']").getAttribute("data-lcgs-action-control"), "icon", "known message action should be marked");
   assert.strictEqual(await page.locator("[data-lcgs-disclaimer='true']").isVisible(), false, "disclaimer should be hidden");
@@ -166,7 +166,7 @@ async function createRouteFixture(pathname, markup) {
     window.chrome = {
       runtime: { getURL: () => "", lastError: null },
       storage: {
-        local: { get: (_keys, callback) => callback({ localChatgptStylerSettings: { enabled: true, theme: "default", backgroundMode: "solid" } }), set: (_values, callback) => callback?.(), remove: (_keys, callback) => callback?.() },
+        local: { get: (_keys, callback) => callback({ localChatgptStylerSettings: { enabled: true, theme: "default", backgroundMode: "solid", localNotes: true } }), set: (_values, callback) => callback?.(), remove: (_keys, callback) => callback?.() },
         onChanged: { addListener: () => {} }
       }
     };
@@ -192,6 +192,7 @@ async function createRouteFixture(pathname, markup) {
   assert.strictEqual(workStyles.headingMarked, false, "Work heading must not receive the chat splash marker");
   assert.notStrictEqual(workStyles.popoverBackground, "rgba(0, 0, 0, 0)", "upload popovers must remain opaque");
   assert.strictEqual(workStyles.viewerActive, false, "ordinary Work images and controls must not trigger image-viewer mode");
+  assert.strictEqual(await work.locator("#local-chatgpt-styler-notes").count(), 0, "notes should not appear without a conversation");
 
   await work.evaluate(() => {
     const viewer = document.createElement("div");
@@ -207,7 +208,7 @@ async function createRouteFixture(pathname, markup) {
     {
       path: "/library",
       className: "lcgs-view-library",
-      markup: '<input id="artifacts-library-search-input" placeholder="Search"><div role="list"><article data-surface>Library item</article></div>',
+      markup: '<input id="artifacts-library-search-input" placeholder="Search"><div data-testid="page-table-toolbar-shell" data-toolbar style="background:#000"><div data-testid="artifacts-surface-library-toolbar-controls"><button>All</button></div></div><div role="list"><article data-surface>Library item</article></div>',
       surface: "article"
     },
     {
@@ -227,13 +228,21 @@ async function createRouteFixture(pathname, markup) {
     const routePage = await createRouteFixture(fixture.path, fixture.markup);
     assert.strictEqual(await routePage.locator("html").getAttribute("class").then((value) => value?.includes(fixture.className)), true, `${fixture.path} should activate its route class`);
     assert.notStrictEqual(await routePage.locator(fixture.surface).evaluate((node) => getComputedStyle(node).backgroundColor), "rgba(0, 0, 0, 0)", `${fixture.path} content should remain readable over a wallpaper`);
+    if (fixture.path === "/library") assert.strictEqual(await routePage.locator("[data-toolbar]").evaluate((node) => getComputedStyle(node).backgroundColor), "rgba(0, 0, 0, 0)", "Library toolbar shell should not render as a black band");
+    assert.strictEqual(await routePage.locator("#local-chatgpt-styler-notes").count(), 0, `${fixture.path} should not show conversation notes`);
     await routePage.close();
   }
+
+  const home = await createRouteFixture("/", '<h1>Where should we begin?</h1>');
+  assert.strictEqual(await home.locator("h1").getAttribute("data-lcgs-splash-heading"), "true", "current home heading should receive splash styling");
+  assert.strictEqual(await home.locator("#local-chatgpt-styler-notes").count(), 0, "home should not show conversation notes");
+  await home.close();
 
   const project = await createRouteFixture("/g/g-p-example/project/", '<div id="thread"><h1>Project name</h1><button>New chat</button></div>');
   assert.ok((await project.locator("html").getAttribute("class"))?.includes("lcgs-view-project"), "project dashboard should activate its route class");
   assert.strictEqual(await project.locator("#thread").evaluate((node) => getComputedStyle(node).borderTopWidth), "0px", "project dashboard must not become a bordered chat card");
   assert.strictEqual(await project.locator("#thread").evaluate((node) => getComputedStyle(node).borderTopLeftRadius), "0px", "project dashboard must not inherit chat rounding");
+  assert.strictEqual(await project.locator("#local-chatgpt-styler-notes").count(), 0, "project dashboard should not show conversation notes");
   await project.close();
 
   const popup = await browser.newPage({ viewport: { width: 456, height: 600 } });
