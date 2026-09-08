@@ -37,6 +37,7 @@ const optionFields = [
   "zenMode",
   "localNotes",
   "advancedSafeMode",
+  "reasoningGuard",
   "promptTools",
   "promptSlashPalette",
   "promptHistory",
@@ -64,6 +65,7 @@ const functionalFieldIds = [
   "zenMode",
   "localNotes",
   "advancedSafeMode",
+  "reasoningGuard",
   "promptTools",
   "promptSlashPalette",
   "promptHistory",
@@ -92,17 +94,12 @@ function normalizePromptSnippets(value) {
 }
 
 function getPromptSnippets() {
-  return new Promise((resolve) => {
-    chrome.storage.local.get(PROMPT_SNIPPETS_STORAGE_KEY, (result) => {
-      resolve(normalizePromptSnippets(result[PROMPT_SNIPPETS_STORAGE_KEY]));
-    });
-  });
+  return lcgsStorageGet(PROMPT_SNIPPETS_STORAGE_KEY)
+    .then((result) => normalizePromptSnippets(result[PROMPT_SNIPPETS_STORAGE_KEY]));
 }
 
 function setPromptSnippets(snippets) {
-  return new Promise((resolve) => {
-    chrome.storage.local.set({ [PROMPT_SNIPPETS_STORAGE_KEY]: normalizePromptSnippets(snippets) }, resolve);
-  });
+  return lcgsStorageSet({ [PROMPT_SNIPPETS_STORAGE_KEY]: normalizePromptSnippets(snippets) });
 }
 
 function setOptionField(id, value) {
@@ -375,13 +372,19 @@ function initSettingsTabs() {
     const id = settingsTabIds[index] || normalizeSettingsTabId(link.getAttribute("href"));
     link.href = `#${id}`;
     link.dataset.settingsTab = id;
+    link.id = `settings-tab-${id}`;
     link.setAttribute("role", "tab");
-    link.setAttribute("aria-controls", settingsTabPanels[id]?.[0] || id);
+    link.setAttribute("aria-controls", (settingsTabPanels[id] || [id]).join(" "));
     link.setAttribute("aria-selected", "false");
     link.addEventListener("click", (event) => {
       event.preventDefault();
       activateSettingsTab(id);
     });
+  });
+
+  document.querySelectorAll("[data-settings-panel]").forEach((panel) => {
+    const owner = settingsTabIds.find((id) => settingsTabPanels[id]?.includes(panel.dataset.settingsPanel));
+    if (owner) panel.setAttribute("aria-labelledby", `settings-tab-${owner}`);
   });
 
   const nav = document.querySelector(".settings-tabs");
@@ -505,6 +508,7 @@ async function initOptions() {
       for (const id of optionFields) setOptionField(id, optionSettings[id]);
       syncOptionPreview();
     }
+    event.target.value = "";
   });
 
   document.getElementById("brandImageFile").addEventListener("change", async (event) => {
@@ -539,6 +543,7 @@ async function initOptions() {
       for (const id of optionFields) setOptionField(id, optionSettings[id]);
       syncOptionPreview();
     }
+    event.target.value = "";
   });
 
   document.getElementById("resetBackgroundImage").addEventListener("click", async () => {
@@ -585,7 +590,7 @@ async function initOptions() {
   });
 
   document.getElementById("exportSettings").addEventListener("click", () => {
-    lcgsDownloadJson("local-chatgpt-styler-settings.json", optionSettings);
+    lcgsDownloadJson("designergpt-settings.json", optionSettings);
   });
 
   document.getElementById("exportTheme").addEventListener("click", () => {
@@ -593,8 +598,12 @@ async function initOptions() {
   });
 
   document.getElementById("clearPromptHistory").addEventListener("click", async () => {
-    await new Promise((resolve) => chrome.storage.local.remove(PROMPT_HISTORY_STORAGE_KEY, resolve));
-    setSettingsStatus("Prompt history cleared.");
+    try {
+      await lcgsStorageRemove(PROMPT_HISTORY_STORAGE_KEY);
+      setSettingsStatus("Prompt history cleared.");
+    } catch (error) {
+      setSettingsStatus(error?.message || "Could not clear prompt history.", "error");
+    }
   });
 
   document.getElementById("exportPromptSnippets").addEventListener("click", async () => {
@@ -625,11 +634,18 @@ async function initOptions() {
   document.getElementById("importSettings").addEventListener("change", async (event) => {
     const [file] = event.target.files;
     if (!file) return;
-    const imported = JSON.parse(await file.text());
-    optionSettings = { ...LCGS_DEFAULTS, ...imported };
-    await saveOptionsSettings("Settings imported.");
-    for (const id of optionFields) setOptionField(id, optionSettings[id]);
-    syncOptionPreview();
+    try {
+      const imported = JSON.parse(await file.text());
+      if (!imported || typeof imported !== "object" || Array.isArray(imported)) throw new Error("Settings file must contain a JSON object.");
+      optionSettings = lcgsNormalizeSettings({ ...LCGS_DEFAULTS, ...imported });
+      await saveOptionsSettings("Settings imported.");
+      for (const id of optionFields) setOptionField(id, optionSettings[id]);
+      syncOptionPreview();
+    } catch (error) {
+      setSettingsStatus(error?.message || "Could not import settings.", "error");
+    } finally {
+      event.target.value = "";
+    }
   });
 
   document.getElementById("importPromptSnippets").addEventListener("change", async (event) => {
@@ -647,4 +663,6 @@ async function initOptions() {
   });
 }
 
-initOptions();
+initOptions().catch((error) => {
+  setSettingsStatus(error?.message || "DesignerGPT settings could not be loaded.", "error");
+});

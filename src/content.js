@@ -14,6 +14,7 @@
   const PROMPT_SNIPPETS_STORAGE_KEY = "localChatgptStylerPromptSnippets";
   const PROMPT_HISTORY_STORAGE_KEY = "localChatgptStylerPromptHistory";
   const MESSAGE_NOTE_BUTTON_CLASS = "lcgs-message-note-button";
+  const ACTION_CONTROL_ATTRIBUTE = "data-lcgs-action-control";
   const DEFAULT_BACKGROUND_PATH = "assets/theme-background.jpg";
   const DEFAULT_BRAND_IMAGE_PATH = "assets/brand-default.png";
   let defaultBackgroundUrl = "";
@@ -63,6 +64,7 @@
     zenMode: false,
     localNotes: false,
     advancedSafeMode: false,
+    reasoningGuard: true,
     promptTools: false,
     promptSlashPalette: true,
     promptHistory: false,
@@ -352,6 +354,7 @@
           zenMode: raw.zenMode,
           localNotes: raw.localNotes,
           advancedSafeMode: raw.advancedSafeMode,
+          reasoningGuard: raw.reasoningGuard,
           promptTools: raw.promptTools,
           promptSlashPalette: raw.promptSlashPalette,
           promptHistory: raw.promptHistory,
@@ -709,16 +712,16 @@ main#main {
   background: color-mix(in srgb, var(--lcgs-sidebar-bg) 68%, #050308 32%);
 }
 
-main#main div#thread,
-main#main #thread,
+main#main:has(section[data-turn], [data-message-author-role]) div#thread,
+main#main:has(section[data-turn], [data-message-author-role]) #thread,
 main#main div[class*="max-w-"][class*="mx-auto"]:has([data-message-author-role]) {
   --thread-content-max-width: var(--lcgs-chat-width) !important;
   --conversation-max-width: var(--lcgs-chat-width) !important;
   max-width: var(--lcgs-chat-width) !important;
 }
 
-main#main div#thread,
-main#main #thread {
+main#main:has(section[data-turn], [data-message-author-role]) div#thread,
+main#main:has(section[data-turn], [data-message-author-role]) #thread {
   margin-left: auto !important;
   margin-right: auto !important;
   width: min(100%, var(--lcgs-chat-width)) !important;
@@ -748,12 +751,11 @@ body, .dark body, html.dark {
   --border-heavy: color-mix(in srgb, var(--lcgs-border) 82%, transparent) !important;
 }
 
-main,
-[role="main"],
-.composer-parent,
-[data-scroll-root],
-main#main > div,
-main#main :is([class*="bg-token-bg-primary"], [class*="bg-token-bg-secondary"], [class*="bg-token-main-surface-primary"], [class*="bg-token-main-surface-secondary"]):not(:has([data-message-author-role])) {
+main#main,
+main#main > .contents,
+main#main .composer-parent,
+main#main [data-scroll-root],
+main#main > div {
   background: transparent !important;
 }
 
@@ -765,36 +767,23 @@ main#main > div {
   min-width: 0 !important;
 }
 
-aside,
-nav,
-[class*="sidebar"],
-[data-testid*="sidebar"],
+nav[aria-label="Chat history"],
+[data-testid="sidebar"],
 #stage-slideover-sidebar {
   background: color-mix(in srgb, var(--lcgs-sidebar-bg) 96%, #000 4%) !important;
   border-color: var(--lcgs-border) !important;
 }
 
-aside a[href],
-nav a[href],
-aside button,
-nav button {
+nav[aria-label="Chat history"] a[href],
+nav[aria-label="Chat history"] button {
   color: var(--lcgs-text) !important;
 }
 
-a[href="/"],
-aside a:has([data-testid="create-new-chat-button"]),
-nav a:has([data-testid="create-new-chat-button"]),
+nav[aria-label="Chat history"] a[href="/"],
+nav[aria-label="Chat history"] a:has([data-testid="create-new-chat-button"]),
 button[data-testid="create-new-chat-button"] {
   background: color-mix(in srgb, var(--lcgs-accent) 24%, var(--lcgs-sidebar-bg) 76%) !important;
   color: #fff !important;
-}
-
-a, button {
-  border-radius: calc(var(--lcgs-radius) - 4px) !important;
-}
-
-a:hover, button:hover {
-  background-color: color-mix(in srgb, var(--lcgs-accent) 18%, transparent) !important;
 }
 
 article,
@@ -878,57 +867,7 @@ html:not(.lcgs-image-viewer-active) main section [data-message-id][class~="group
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--lcgs-accent) 46%, transparent) inset !important;
 }
 
-main#main [data-lcgs-memory-label="true"] {
-  display: inline-flex !important;
-  box-sizing: border-box !important;
-  width: fit-content !important;
-  max-width: 100% !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-  gap: 5px !important;
-  justify-self: start !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  color: var(--lcgs-text) !important;
-  background: transparent !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  font: 800 11px/1.15 ui-monospace, SFMono-Regular, Consolas, Liberation Mono, monospace !important;
-  text-align: left !important;
-  white-space: nowrap !important;
-}
-
-main#main [data-lcgs-memory-label="true"] [aria-label="Announcements"] {
-  display: none !important;
-}
-
-main#main [data-lcgs-memory-label="true"] button {
-  min-height: 0 !important;
-  padding: 0 !important;
-  color: var(--lcgs-text) !important;
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  transform: none !important;
-}
-
-main#main [data-lcgs-memory-label="true"] :is(svg, img) {
-  width: 14px !important;
-  height: 14px !important;
-  flex: 0 0 14px !important;
-}
-
-main#main [data-lcgs-memory-label="true"] :is(div, span):not(:has(svg)):not(:has(img)) {
-  background: transparent !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  outline: 0 !important;
-}
-
-html:not(.lcgs-image-viewer-active) main section[data-turn] :is(button, a[role="button"], [role="button"]):has(svg):not(:has(:is(span, div, p))):not([data-testid="send-button"]):not([aria-label="Sources"]):not([aria-label*="Voice"]):not([aria-label*="dictation"]):not([aria-label*="Microphone"]):not([aria-label*="Edit"]),
-html:not(.lcgs-image-viewer-active) main section [data-message-id][class~="group/message"] :is(button, a[role="button"], [role="button"]):has(svg):not(:has(:is(span, div, p))):not([data-testid="send-button"]):not([aria-label="Sources"]):not([aria-label*="Voice"]):not([aria-label*="dictation"]):not([aria-label*="Microphone"]):not([aria-label*="Edit"]) {
+html:not(.lcgs-image-viewer-active) main [${ACTION_CONTROL_ATTRIBUTE}="icon"] {
   inline-size: 34px !important;
   block-size: 32px !important;
   min-inline-size: 34px !important;
@@ -945,8 +884,7 @@ html:not(.lcgs-image-viewer-active) main section [data-message-id][class~="group
   box-shadow: none !important;
 }
 
-html:not(.lcgs-image-viewer-active) main section[data-turn] :is(button, a[role="button"], [role="button"]):has(svg):not(:has(:is(span, div, p))):not([data-testid="send-button"]):not([aria-label="Sources"]):not([aria-label*="Voice"]):not([aria-label*="dictation"]):not([aria-label*="Microphone"]):not([aria-label*="Edit"]) svg,
-html:not(.lcgs-image-viewer-active) main section [data-message-id][class~="group/message"] :is(button, a[role="button"], [role="button"]):has(svg):not(:has(:is(span, div, p))):not([data-testid="send-button"]):not([aria-label="Sources"]):not([aria-label*="Voice"]):not([aria-label*="dictation"]):not([aria-label*="Microphone"]):not([aria-label*="Edit"]) svg {
+html:not(.lcgs-image-viewer-active) main [${ACTION_CONTROL_ATTRIBUTE}="icon"] svg {
   width: 18px !important;
   inline-size: 18px !important;
   min-width: 18px !important;
@@ -1157,8 +1095,7 @@ html:not(.lcgs-image-viewer-active) main section [data-message-id][class~="group
   height: 14px !important;
 }
 
-html:not(.lcgs-image-viewer-active) main section[data-turn] :is(button, a[role="button"], [role="button"]):has(svg):not(:has(:is(span, div, p))):not([data-testid="send-button"]):not([aria-label="Sources"]):not([aria-label*="Voice"]):not([aria-label*="dictation"]):not([aria-label*="Microphone"]):not([aria-label*="Edit"]):hover,
-html:not(.lcgs-image-viewer-active) main section [data-message-id][class~="group/message"] :is(button, a[role="button"], [role="button"]):has(svg):not(:has(:is(span, div, p))):not([data-testid="send-button"]):not([aria-label="Sources"]):not([aria-label*="Voice"]):not([aria-label*="dictation"]):not([aria-label*="Microphone"]):not([aria-label*="Edit"]):hover,
+html:not(.lcgs-image-viewer-active) main [${ACTION_CONTROL_ATTRIBUTE}="icon"]:hover,
 html:not(.lcgs-image-viewer-active) main section[data-turn] button:has(.truncate):hover,
 html:not(.lcgs-image-viewer-active) main section [data-message-id][class~="group/message"] button:has(.truncate):hover,
 html:not(.lcgs-image-viewer-active) main section[data-turn] button.text-start:has(> svg.icon-xs):hover,
@@ -1183,67 +1120,23 @@ html:not(.lcgs-image-viewer-active) main section [data-message-id][class~="group
   border-color: color-mix(in srgb, var(--lcgs-accent) 58%, var(--lcgs-border) 42%) !important;
 }
 
-html.lcgs-image-viewer-active body,
-html.lcgs-image-viewer-active main#main,
-html.lcgs-image-viewer-active [data-scroll-root],
-html.lcgs-image-viewer-active main#main > div {
-  background: #202020 !important;
-  background-image: none !important;
-}
-
-html.lcgs-image-viewer-active body::before,
-html.lcgs-image-viewer-active body::after,
-html.lcgs-image-viewer-active main#main::before {
+html.lcgs-image-viewer-active #${EXPORT_ID} {
   display: none !important;
 }
 
-html.lcgs-image-viewer-active main#main section[data-turn],
-html.lcgs-image-viewer-active main#main [data-message-author-role],
-html.lcgs-image-viewer-active main#main [class*="composer-parent"] + *,
-html.lcgs-image-viewer-active main#main div#thread {
-  visibility: hidden !important;
+[data-lcgs-image-viewer="true"] {
+  --main-surface-primary: #202124 !important;
+  --token-main-surface-primary: #202124 !important;
+  --bg-primary: #202124 !important;
+  background: #202124 !important;
+  color: #f5f5f5 !important;
 }
 
-html.lcgs-image-viewer-active main#main section[data-turn] *,
-html.lcgs-image-viewer-active main#main [data-message-author-role] * {
-  visibility: hidden !important;
+[data-lcgs-image-viewer="true"] :is([class*="bg-token-bg-primary"], [class*="bg-token-main-surface-primary"]) {
+  background-color: #202124 !important;
 }
 
-html.lcgs-image-viewer-active #${BRAND_ID},
-html.lcgs-image-viewer-active #${EXPORT_ID},
-html.lcgs-image-viewer-active aside,
-html.lcgs-image-viewer-active nav,
-html.lcgs-image-viewer-active #page-header,
-html.lcgs-image-viewer-active #calpico-page-header,
-html.lcgs-image-viewer-active header[class*="h-header-height"],
-html.lcgs-image-viewer-active [data-testid*="sidebar"],
-html.lcgs-image-viewer-active [class*="sidebar"],
-html.lcgs-image-viewer-active main#main div.composer-parent,
-html.lcgs-image-viewer-active main#main #thread-bottom-container,
-html.lcgs-image-viewer-active main#main form:has(#prompt-textarea),
-html.lcgs-image-viewer-active main#main form:has(textarea[name="prompt-textarea"]) {
-  display: none !important;
-}
-
-html.lcgs-image-viewer-active main#main :is(img, picture, canvas, video),
-html.lcgs-image-viewer-active main#main form:has(textarea[placeholder*="Describe edits"]),
-html.lcgs-image-viewer-active main#main form:has([contenteditable="true"][aria-label*="Describe edits"]),
-html.lcgs-image-viewer-active main#main [role="toolbar"],
-html.lcgs-image-viewer-active main#main [data-testid*="image"],
-html.lcgs-image-viewer-active main#main [class*="image"] {
-  visibility: visible !important;
-}
-
-html.lcgs-image-viewer-active main#main section[data-turn] :is(img, picture, canvas, video),
-html.lcgs-image-viewer-active main#main [data-message-author-role] :is(img, picture, canvas, video) {
-  visibility: hidden !important;
-}
-
-html.lcgs-image-viewer-active main#main > :not(header):not(aside):not(nav) {
-  background-color: #202020 !important;
-}
-
-html.lcgs-image-viewer-active main#main img {
+[data-lcgs-image-viewer="true"] img {
   box-shadow: 0 18px 48px rgba(0, 0, 0, .32) !important;
 }
 
@@ -1299,8 +1192,6 @@ html.lcgs-zen-mode-active main#main :is(
   button[aria-label*="Share" i],
   button[aria-label*="copy" i],
   button[aria-label*="source" i],
-  button[aria-label*="file" i],
-  button[aria-label*="project" i],
   button[aria-label*="reaction" i],
   button[aria-label*="read aloud" i],
   button[aria-label*="regenerate" i],
@@ -1310,32 +1201,10 @@ html.lcgs-zen-mode-active main#main :is(
   [data-testid="webpage-citation-pill"],
   [data-testid*="citation" i],
   [data-testid*="sources" i],
-  [data-testid*="file" i],
-  [data-testid*="attachment" i],
+  section[data-turn] button:has(.truncate),
   [class*="message-timestamp"],
   .stylergpt-message-timestamp
 ):not([data-testid="send-button"]):not([aria-label*="Voice" i]):not([aria-label*="Microphone" i]):not([aria-label*="dictation" i]) {
-  display: none !important;
-}
-
-html.lcgs-zen-mode-active main#main :is(
-  div,
-  span
-):has(> :is(
-  button[data-testid="copy-turn-action-button"],
-  button[data-testid="project-save-turn-action-button"],
-  button[aria-label="Sources"],
-  button[aria-label="Copy response"],
-  button[aria-label="Copy message"],
-  button[aria-label="Edit message"],
-  button[aria-label="Add to project sources"],
-  button[aria-label="Switch model"],
-  button[aria-label="More actions"],
-  button[aria-label*="Share" i],
-  button[aria-label*="source" i],
-  button[aria-label*="file" i],
-  [data-testid="webpage-citation-pill"]
-)):not(:has(#prompt-textarea)):not(:has([data-testid="send-button"])) {
   display: none !important;
 }
 
@@ -1805,8 +1674,7 @@ header[class*="h-header-height"] {
   backdrop-filter: none !important;
 }
 
-main h1,
-main h1:first-child {
+[data-lcgs-splash-heading="true"] {
   backdrop-filter: blur(10px) !important;
   background-color: color-mix(in srgb, var(--lcgs-surface) 78%, transparent) !important;
   border: 1px solid color-mix(in srgb, var(--lcgs-border) 72%, transparent) !important;
@@ -1816,16 +1684,68 @@ main h1:first-child {
   padding: 12px 24px !important;
 }
 
-main#main:has(input[placeholder*="Search library"]) :is([role="tablist"], nav:has([role="tab"]), div:has(> [role="tab"])) {
+html.lcgs-view-scheduled main#main > main.bg-primary {
+  background-color: color-mix(in srgb, #08090c 46%, transparent) !important;
+}
+
+html.lcgs-view-scheduled main#main article,
+html.lcgs-view-scheduled main#main [role="list"] > * > button {
+  background-color: color-mix(in srgb, var(--lcgs-surface) 84%, var(--lcgs-sidebar-bg) 16%) !important;
+  border: 1px solid color-mix(in srgb, var(--lcgs-border) 54%, transparent) !important;
+  border-radius: max(8px, calc(var(--lcgs-radius) - 2px)) !important;
+  color: var(--lcgs-text) !important;
+}
+
+html.lcgs-view-scheduled main#main article:hover,
+html.lcgs-view-scheduled main#main [role="list"] > * > button:hover {
+  background-color: color-mix(in srgb, var(--lcgs-surface) 74%, var(--lcgs-accent) 26%) !important;
+}
+
+html.lcgs-view-plugins main#main .bg-primary.min-h-screen {
+  background-color: color-mix(in srgb, #08090c 46%, transparent) !important;
+}
+
+html.lcgs-view-plugins main#main article {
+  background-color: color-mix(in srgb, var(--lcgs-surface) 84%, var(--lcgs-sidebar-bg) 16%) !important;
+  border: 1px solid color-mix(in srgb, var(--lcgs-border) 50%, transparent) !important;
+  color: var(--lcgs-text) !important;
+}
+
+html.lcgs-view-plugins main#main article:hover {
+  background-color: color-mix(in srgb, var(--lcgs-surface) 74%, var(--lcgs-accent) 26%) !important;
+}
+
+html.lcgs-view-plugins main#main #plugin-search,
+html.lcgs-view-plugins main#main [role="tab"],
+html.lcgs-view-plugins main#main form[role="search"] ~ button {
+  background-color: color-mix(in srgb, var(--lcgs-surface) 84%, var(--lcgs-sidebar-bg) 16%) !important;
+  border-color: color-mix(in srgb, var(--lcgs-border) 54%, transparent) !important;
+  color: var(--lcgs-text) !important;
+}
+
+html.lcgs-view-project main#main {
+  background-color: color-mix(in srgb, #08090c 42%, transparent) !important;
+}
+
+html.lcgs-view-project main#main #thread {
+  width: 100% !important;
+  max-width: none !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) :is([role="tablist"], nav:has([role="tab"]), div:has(> [role="tab"])) {
   background: transparent !important;
   border-color: transparent !important;
   box-shadow: none !important;
   color: var(--lcgs-text) !important;
 }
 
-main#main:has(input[placeholder*="Search library"]) [data-testid="artifacts-surface-top-controls-shell"],
-main#main:has(input[placeholder*="Search library"]) [data-testid="artifacts-surface-top-controls"],
-main#main:has(input[placeholder*="Search library"]) [data-testid="artifacts-surface-top-controls-shell-inner"] {
+main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) [data-testid="artifacts-surface-top-controls-shell"],
+main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) [data-testid="artifacts-surface-top-controls"],
+main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) [data-testid="artifacts-surface-top-controls-shell-inner"] {
   --main-surface-primary: transparent !important;
   --token-main-surface-primary: transparent !important;
   background: transparent !important;
@@ -1835,48 +1755,66 @@ main#main:has(input[placeholder*="Search library"]) [data-testid="artifacts-surf
   box-shadow: none !important;
 }
 
-main#main:has(input[placeholder*="Search library"]) :is([role="tab"], button:has(svg), [role="button"]:has(svg)) {
+main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) :is([role="tab"], button:has(svg), [role="button"]:has(svg)) {
   background-color: color-mix(in srgb, var(--lcgs-surface) 68%, transparent) !important;
   border: 1px solid color-mix(in srgb, var(--lcgs-border) 58%, transparent) !important;
   border-radius: max(8px, calc(var(--lcgs-radius) - 4px)) !important;
   color: var(--lcgs-text) !important;
 }
 
-main#main:has(input[placeholder*="Search library"]) :is([role="tab"][aria-selected="true"], [role="tab"][data-state="active"], button[aria-pressed="true"], [role="button"][aria-pressed="true"]) {
+main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) :is([role="tab"][aria-selected="true"], [role="tab"][data-state="active"], button[aria-pressed="true"], [role="button"][aria-pressed="true"]) {
   background-color: color-mix(in srgb, var(--lcgs-surface) 92%, #000 8%) !important;
   border-color: color-mix(in srgb, var(--lcgs-accent) 48%, var(--lcgs-border) 52%) !important;
   color: var(--lcgs-text) !important;
 }
 
-main#main:has(input[placeholder*="Search library"]) :is([role="tab"], button:has(svg), [role="button"]:has(svg)):hover {
+main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) :is([role="tab"], button:has(svg), [role="button"]:has(svg)):hover {
   background-color: color-mix(in srgb, var(--lcgs-surface) 82%, transparent) !important;
 }
 
-main#main:has(input[placeholder*="Search library"]) :is(table, [role="table"], [role="grid"], [data-testid*="library"], [data-testid*="file-list"], [class*="library"]:has([role="row"])) {
-  background-color: color-mix(in srgb, var(--lcgs-surface) 88%, transparent) !important;
+main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) :is(table, [role="table"], [role="grid"], [data-testid*="library"], [data-testid*="file-list"], [class*="library"]:has([role="row"])) {
+  background-color: color-mix(in srgb, var(--lcgs-surface) 90%, var(--lcgs-sidebar-bg) 10%) !important;
   border: 1px solid color-mix(in srgb, var(--lcgs-border) 48%, transparent) !important;
   border-radius: calc(var(--lcgs-radius) + 8px) !important;
   color: var(--lcgs-text) !important;
   overflow: hidden !important;
 }
 
-main#main:has(input[placeholder*="Search library"]) :is(tr, [role="row"], li, article):has(:is(img, svg, [role="cell"], [data-testid*="file"], [href*="/library"])) {
-  background-color: color-mix(in srgb, var(--lcgs-surface) 78%, transparent) !important;
+main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) :is(tr, [role="row"], li, article):has(:is(img, svg, [role="cell"], [data-testid*="file"], [href*="/library"])),
+main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) [role="list"] > article {
+  background-color: color-mix(in srgb, var(--lcgs-surface) 84%, var(--lcgs-sidebar-bg) 16%) !important;
   border-color: color-mix(in srgb, var(--lcgs-border) 42%, transparent) !important;
   color: var(--lcgs-text) !important;
 }
 
-main#main:has(input[placeholder*="Search library"]) :is(tr, [role="row"], li, article):has(:is(img, svg, [role="cell"], [data-testid*="file"], [href*="/library"])):hover {
-  background-color: color-mix(in srgb, var(--lcgs-surface) 82%, transparent) !important;
+main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) :is(tr, [role="row"], li, article):has(:is(img, svg, [role="cell"], [data-testid*="file"], [href*="/library"])):hover,
+main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) [role="list"] > article:hover {
+  background-color: color-mix(in srgb, var(--lcgs-surface) 76%, var(--lcgs-accent) 24%) !important;
 }
 
-main#main:has(input[placeholder*="Search library"]) :is([role="cell"], [role="columnheader"], td, th) {
+main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) :is([role="cell"], [role="columnheader"], td, th) {
   color: inherit !important;
   border-color: color-mix(in srgb, var(--lcgs-border) 34%, transparent) !important;
 }
 
-main#main:has(input[placeholder*="Search library"]) :is(button, [role="button"], select) {
+main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) :is(
+  [data-testid="artifacts-surface-top-controls"] button,
+  [data-testid="artifacts-surface-top-controls-shell"] button,
+  button[aria-label="Open filters"],
+  [role="tab"],
+  select
+) {
   border-color: color-mix(in srgb, var(--lcgs-border) 58%, transparent) !important;
+  background-color: color-mix(in srgb, var(--lcgs-surface) 82%, var(--lcgs-sidebar-bg) 18%) !important;
+  color: var(--lcgs-text) !important;
+}
+
+main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) div:has(> button[aria-label*="modified" i]),
+main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) div:has(> button[aria-label^="Open folder" i]) {
+  padding: 8px !important;
+  background-color: color-mix(in srgb, var(--lcgs-surface) 84%, var(--lcgs-sidebar-bg) 16%) !important;
+  border: 1px solid color-mix(in srgb, var(--lcgs-border) 48%, transparent) !important;
+  border-radius: max(8px, calc(var(--lcgs-radius) - 2px)) !important;
 }
 
 main#main:has(input[placeholder*="Search GPTs"]) :is([class*="bg-token-main-surface"], [class*="bg-token-bg"], [class*="bg-surface"], [class*="sticky"], [role="tablist"], nav:has(a), div:has(> input[placeholder*="Search GPTs"])) {
@@ -1918,92 +1856,6 @@ main#main:has(input[placeholder*="Search GPTs"]) :is(article, li, [role="article
   border-color: color-mix(in srgb, var(--lcgs-accent) 48%, var(--lcgs-border) 52%) !important;
 }
 
-main#main:not(:has(section[data-turn])):not(:has([data-message-author-role])):not(:has(input[placeholder*="Search library"])) :is(article, li, [role="article"], [role="listitem"], div[class*="border"], div[class*="rounded"], [class*="group"]):has(:is(img, picture)):has(:is(h2, h3, [class*="text-lg"], [class*="font-semibold"])):has(:is(button, [role="button"]) svg) {
-  background-color: color-mix(in srgb, var(--lcgs-surface) 74%, transparent) !important;
-  border: 1px solid color-mix(in srgb, var(--lcgs-border) 58%, transparent) !important;
-  border-radius: calc(var(--lcgs-radius) + 10px) !important;
-  box-shadow: 0 18px 54px rgba(0, 0, 0, .16) !important;
-  color: var(--lcgs-text) !important;
-}
-
-main#main:not(:has(section[data-turn])):not(:has([data-message-author-role])):not(:has(input[placeholder*="Search library"])) :is(article, li, [role="article"], [role="listitem"], div[class*="border"], div[class*="rounded"], [class*="group"]):has(:is(img, picture)):has(:is(h2, h3, [class*="text-lg"], [class*="font-semibold"])):has(:is(button, [role="button"]) svg):hover {
-  background-color: color-mix(in srgb, var(--lcgs-surface) 86%, transparent) !important;
-  border-color: color-mix(in srgb, var(--lcgs-accent) 56%, var(--lcgs-border) 44%) !important;
-}
-
-main#main:not(:has(section[data-turn])):not(:has([data-message-author-role])):not(:has(input[placeholder*="Search library"])) :is(article, li, [role="article"], [role="listitem"], div[class*="border"], div[class*="rounded"], [class*="group"]):has(:is(img, picture)):has(:is(h2, h3, [class*="text-lg"], [class*="font-semibold"])):has(:is(button, [role="button"]) svg) :is(button, [role="button"]):has(svg) {
-  color: var(--lcgs-text) !important;
-  background-color: color-mix(in srgb, var(--lcgs-surface) 52%, transparent) !important;
-  border: 1px solid color-mix(in srgb, var(--lcgs-border) 42%, transparent) !important;
-  border-radius: max(8px, calc(var(--lcgs-radius) - 6px)) !important;
-}
-
-:is([role="dialog"], [role="tabpanel"], [role="listbox"], [role="menu"], [data-testid*="modal"], [data-testid*="settings"], [data-testid*="schedule"], [data-testid*="source"]):not(#${EXPORT_MODAL_ID}):not(#${EXPORT_MODAL_ID} *) {
-  background-color: color-mix(in srgb, var(--lcgs-surface) 88%, transparent) !important;
-  border-color: color-mix(in srgb, var(--lcgs-border) 66%, transparent) !important;
-  color: var(--lcgs-text) !important;
-}
-
-:is([role="dialog"], [data-testid*="modal"]):not(#${EXPORT_MODAL_ID}):not(#${EXPORT_MODAL_ID} *) {
-  border: 1px solid color-mix(in srgb, var(--lcgs-border) 70%, transparent) !important;
-  border-radius: calc(var(--lcgs-radius) + 8px) !important;
-  box-shadow: 0 24px 72px rgba(0, 0, 0, .34) !important;
-}
-
-:is([role="dialog"], [data-testid*="modal"]):not(#${EXPORT_MODAL_ID}):not(#${EXPORT_MODAL_ID} *) :is(header, footer) {
-  background-color: color-mix(in srgb, var(--lcgs-composer-bg) 92%, transparent) !important;
-  border-color: color-mix(in srgb, var(--lcgs-border) 62%, transparent) !important;
-}
-
-:is(#modal-settings, [role="dialog"]:has([role="tablist"]), [data-testid*="settings"]):not(#${EXPORT_MODAL_ID}):not(#${EXPORT_MODAL_ID} *) [role="tablist"] :is(button, [role="tab"], [role="button"]) {
-  border-radius: max(8px, calc(var(--lcgs-radius) - 5px)) !important;
-  color: var(--lcgs-text) !important;
-}
-
-:is(#modal-settings, [role="dialog"]:has([role="tablist"]), [data-testid*="settings"]):not(#${EXPORT_MODAL_ID}):not(#${EXPORT_MODAL_ID} *) [role="tablist"] :is(button, [role="tab"], [role="button"]):hover {
-  background-color: color-mix(in srgb, var(--lcgs-surface) 62%, transparent) !important;
-}
-
-:is(#modal-settings, [role="dialog"]:has([role="tablist"]), [data-testid*="settings"]):not(#${EXPORT_MODAL_ID}):not(#${EXPORT_MODAL_ID} *) [role="tablist"] :is([aria-selected="true"], [aria-current="page"], [data-state="active"], [data-active="true"], button[aria-pressed="true"]) {
-  background-color: color-mix(in srgb, var(--lcgs-surface) 92%, #000 8%) !important;
-  border: 1px solid color-mix(in srgb, var(--lcgs-accent) 50%, var(--lcgs-border) 50%) !important;
-  box-shadow: inset 3px 0 0 var(--lcgs-accent), 0 0 0 1px color-mix(in srgb, var(--lcgs-accent) 18%, transparent) !important;
-  color: var(--lcgs-text) !important;
-}
-
-:is(#modal-settings, [role="dialog"]:has([role="tablist"]), [data-testid*="settings"]):not(#${EXPORT_MODAL_ID}):not(#${EXPORT_MODAL_ID} *) [role="tablist"] :is([aria-selected="true"], [aria-current="page"], [data-state="active"], [data-active="true"], button[aria-pressed="true"]) :is(svg, span) {
-  color: var(--lcgs-text) !important;
-  opacity: 1 !important;
-}
-
-:is(#modal-settings, [role="dialog"]:has([role="tablist"]), [data-testid*="settings"]):not(#${EXPORT_MODAL_ID}):not(#${EXPORT_MODAL_ID} *) :is([role="tabpanel"], section) :is(button, [role="button"], [role="menuitem"], [role="option"], label, [class*="cursor-pointer"], [class*="hoverable"]):hover {
-  background-color: color-mix(in srgb, var(--lcgs-surface) 66%, transparent) !important;
-  border-color: color-mix(in srgb, var(--lcgs-accent) 36%, var(--lcgs-border) 64%) !important;
-  color: var(--lcgs-text) !important;
-}
-
-:is(#modal-settings, [role="dialog"]:has([role="tablist"]), [data-testid*="settings"]):not(#${EXPORT_MODAL_ID}):not(#${EXPORT_MODAL_ID} *) :is([role="tabpanel"], section) :is([class*="border-b"], [class*="border-t"]):hover {
-  background-color: color-mix(in srgb, var(--lcgs-surface) 42%, transparent) !important;
-}
-
-:is([role="list"], [data-testid*="schedule"], [data-testid*="source"], [data-testid*="settings"]):not(#${EXPORT_MODAL_ID}):not(#${EXPORT_MODAL_ID} *) :is(li, article, [role="listitem"], [data-testid*="conversation"], [data-testid*="schedule"], [data-testid*="source-row"], [data-testid*="file"], [class*="group"]:has(a[href*="/c/"])) {
-  border-color: color-mix(in srgb, var(--lcgs-border) 42%, transparent) !important;
-}
-
-:is([role="list"], [data-testid*="schedule"], [data-testid*="source"], [data-testid*="settings"]):not(#${EXPORT_MODAL_ID}):not(#${EXPORT_MODAL_ID} *) :is([role="listitem"], [data-testid*="conversation"], [data-testid*="schedule"], [data-testid*="source-row"], [data-testid*="file"]):hover {
-  background-color: color-mix(in srgb, var(--lcgs-surface) 68%, transparent) !important;
-}
-
-main#main :is(input, textarea, select, [contenteditable="true"], [role="textbox"]) {
-  background-color: var(--lcgs-composer-bg) !important;
-  border-color: color-mix(in srgb, var(--lcgs-border) 76%, transparent) !important;
-  color: var(--lcgs-text) !important;
-}
-
-main#main :is(input, textarea, select, [contenteditable="true"], [role="textbox"])::placeholder {
-  color: color-mix(in srgb, var(--lcgs-muted) 82%, transparent) !important;
-}
-
 main#main form:has(#prompt-textarea) :is(#prompt-textarea, textarea, [contenteditable="true"], [role="textbox"], .ProseMirror),
 main#main form:has(textarea[name="prompt-textarea"]) :is(#prompt-textarea, textarea, [contenteditable="true"], [role="textbox"], .ProseMirror),
 main#main form:has(div[contenteditable="true"].ProseMirror) :is(#prompt-textarea, textarea, [contenteditable="true"], [role="textbox"], .ProseMirror),
@@ -2014,18 +1866,19 @@ main#main [data-testid="composer-root"] :is(#prompt-textarea, textarea, [content
   box-shadow: none !important;
 }
 
-:is([role="dialog"], [data-testid*="modal"], [data-testid*="source"], [data-testid*="upload"]):not(#${EXPORT_MODAL_ID}):not(#${EXPORT_MODAL_ID} *) :is([class*="border-dashed"], [data-testid*="drop"], [data-testid*="upload"], div:has(> input[type="file"])) {
-  background-color: color-mix(in srgb, var(--lcgs-surface) 78%, transparent) !important;
-  border-color: color-mix(in srgb, var(--lcgs-text) 70%, transparent) !important;
+main#main .popover {
+  background-color: color-mix(in srgb, var(--lcgs-sidebar-bg) 94%, #08090c 6%) !important;
+  border: 1px solid color-mix(in srgb, var(--lcgs-border) 58%, transparent) !important;
   color: var(--lcgs-text) !important;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .36) !important;
 }
 
-:is([role="dialog"], [data-testid*="modal"], [data-testid*="settings"], [data-testid*="schedule"], [data-testid*="source"]):not(#${EXPORT_MODAL_ID}):not(#${EXPORT_MODAL_ID} *) :is([class*="bg-token-main-surface"], [class*="bg-token-bg"], [class*="bg-surface"], [class*="bg-white"], [class*="dark:bg"]) {
-  background-color: color-mix(in srgb, var(--lcgs-surface) 82%, transparent) !important;
+main#main .popover .__menu-item {
+  background-color: transparent !important;
 }
 
-:is([role="dialog"], [data-testid*="modal"], [data-testid*="settings"], [data-testid*="schedule"]):not(#${EXPORT_MODAL_ID}):not(#${EXPORT_MODAL_ID} *) :is([data-testid*="schedule"], [href*="schedule"], [role="row"]) {
-  background-color: color-mix(in srgb, var(--lcgs-surface) 62%, transparent) !important;
+main#main .popover .__menu-item:hover {
+  background-color: color-mix(in srgb, var(--lcgs-accent) 16%, transparent) !important;
 }
 
 main#main div#thread #thread-bottom-container > div,
@@ -2202,35 +2055,34 @@ div[class="pb-[calc(var(--sidebar-section-margin-top)-var(--sidebar-section-firs
 }
 ` : ""}
 
-.__menu-label[data-no-spacing] {
+nav[aria-label="Chat history"] .__menu-label[data-lcgs-sidebar-label] {
   visibility: hidden !important;
 }
 
-.__menu-label[data-no-spacing]::after {
+nav[aria-label="Chat history"] .__menu-label[data-lcgs-sidebar-label]::after {
   visibility: visible !important;
   content: "Folders";
   display: block;
   padding-bottom: 2px;
 }
 
-.__menu-label[data-no-spacing][data-lcgs-sidebar-label="loose-files"]::after {
+nav[aria-label="Chat history"] .__menu-label[data-lcgs-sidebar-label="loose-files"]::after {
   content: "Loose files";
 }
 
-[data-lcgs-profile-status="true"] {
+html.lcgs-compact-sidebar-active [data-lcgs-profile-status="true"] {
   display: none !important;
 }
 
 #${EXPORT_ID} {
-  position: fixed;
-  top: 9px;
-  right: 150px;
-  z-index: 2147483646;
+  position: relative;
+  z-index: 20;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 2px;
+  flex: 0 0 auto;
   font: 700 12px/1 var(--lcgs-font-family);
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 #${EXPORT_ID}[hidden] {
@@ -2242,18 +2094,22 @@ div[class="pb-[calc(var(--sidebar-section-margin-top)-var(--sidebar-section-firs
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 34px;
-  padding: 0 9px;
-  border: 0;
+  min-height: 32px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--lcgs-border) 62%, transparent);
   border-radius: 8px !important;
-  background: transparent !important;
+  background: color-mix(in srgb, var(--lcgs-surface) 44%, transparent) !important;
   color: var(--lcgs-text) !important;
   cursor: pointer;
-  pointer-events: auto;
+}
+
+main#main [data-lcgs-disclaimer="true"] {
+  display: none !important;
 }
 
 #${EXPORT_ID} .lcgs-export-trigger {
-  background: transparent !important;
+  background: color-mix(in srgb, var(--lcgs-surface) 44%, transparent) !important;
 }
 
 #${EXPORT_ID} button:hover,
@@ -2332,12 +2188,27 @@ div[class="pb-[calc(var(--sidebar-section-margin-top)-var(--sidebar-section-firs
   gap: 6px;
   min-height: 34px;
   padding: 0 9px;
-  border: 0;
+  border: 1px solid color-mix(in srgb, var(--lcgs-border) 62%, transparent);
   border-radius: 8px !important;
-  background: transparent !important;
+  background: color-mix(in srgb, var(--lcgs-surface) 44%, transparent) !important;
   color: var(--lcgs-text) !important;
   box-shadow: none;
   cursor: pointer;
+}
+
+:is(#page-header, #calpico-page-header) :is(
+  button[aria-label="Share"],
+  button[aria-label*="Share" i],
+  button[aria-label="More actions"]
+) {
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 0 10px !important;
+  border: 1px solid color-mix(in srgb, var(--lcgs-border) 62%, transparent) !important;
+  border-radius: 8px !important;
+  background: color-mix(in srgb, var(--lcgs-surface) 44%, transparent) !important;
+  color: var(--lcgs-text) !important;
+  box-shadow: none !important;
 }
 
 #${PROMPT_TOOLS_ID} .lcgs-tool-trigger:hover,
@@ -2771,11 +2642,16 @@ html.lcgs-local-notes-active .${MESSAGE_NOTE_BUTTON_CLASS}:focus-visible {
 #${EXPORT_MODAL_ID} .lcgs-modal {
   width: min(720px, calc(100vw - 32px));
   border: 1px solid color-mix(in srgb, var(--lcgs-border) 74%, transparent);
-  border-radius: 14px;
-  background: #351738;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--lcgs-sidebar-bg) 92%, #111318 8%);
   color: var(--lcgs-text);
   box-shadow: 0 24px 90px rgba(0, 0, 0, 0.52);
   overflow: hidden;
+}
+
+#${EXPORT_MODAL_ID} .lcgs-modal,
+#${EXPORT_MODAL_ID} .lcgs-modal * {
+  box-sizing: border-box;
 }
 
 #${EXPORT_MODAL_ID} header,
@@ -2788,7 +2664,7 @@ html.lcgs-local-notes-active .${MESSAGE_NOTE_BUTTON_CLASS}:focus-visible {
 }
 
 #${EXPORT_MODAL_ID} header {
-  background: #5a1b61;
+  background: color-mix(in srgb, var(--lcgs-surface) 86%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--lcgs-border) 68%, transparent);
 }
 
@@ -2807,10 +2683,15 @@ html.lcgs-local-notes-active .${MESSAGE_NOTE_BUTTON_CLASS}:focus-visible {
 #${EXPORT_MODAL_ID} .lcgs-panel {
   display: grid;
   gap: 12px;
-  padding: 16px;
-  border: 1px solid color-mix(in srgb, var(--lcgs-border) 70%, transparent);
-  border-radius: 14px;
-  background: #522052;
+  min-width: 0;
+  padding: 4px 16px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+#${EXPORT_MODAL_ID} .lcgs-panel + .lcgs-panel {
+  border-left: 1px solid color-mix(in srgb, var(--lcgs-border) 54%, transparent);
 }
 
 #${EXPORT_MODAL_ID} h3 {
@@ -2825,7 +2706,7 @@ html.lcgs-local-notes-active .${MESSAGE_NOTE_BUTTON_CLASS}:focus-visible {
   gap: 7px;
   font-size: 12px;
   font-weight: 700;
-  color: #eea6ff;
+  color: var(--lcgs-muted);
 }
 
 #${EXPORT_MODAL_ID} input,
@@ -2834,7 +2715,7 @@ html.lcgs-local-notes-active .${MESSAGE_NOTE_BUTTON_CLASS}:focus-visible {
   width: 100%;
   border: 1px solid color-mix(in srgb, var(--lcgs-border) 65%, transparent);
   border-radius: 10px;
-  background: #4a184b;
+  background: color-mix(in srgb, var(--lcgs-surface) 78%, #0b0d10 22%);
   color: var(--lcgs-text);
   padding: 0 12px;
   font: inherit;
@@ -2848,7 +2729,7 @@ html.lcgs-local-notes-active .${MESSAGE_NOTE_BUTTON_CLASS}:focus-visible {
   padding: 0 12px;
   border: 1px solid color-mix(in srgb, var(--lcgs-border) 55%, transparent);
   border-radius: 10px;
-  background: #4a184b;
+  background: color-mix(in srgb, var(--lcgs-surface) 72%, transparent);
   color: var(--lcgs-text);
   font-weight: 700;
 }
@@ -2860,7 +2741,7 @@ html.lcgs-local-notes-active .${MESSAGE_NOTE_BUTTON_CLASS}:focus-visible {
   min-height: 22px;
   border: 1px solid color-mix(in srgb, var(--lcgs-border) 70%, transparent);
   border-radius: 999px;
-  background: #401441;
+  background: color-mix(in srgb, var(--lcgs-sidebar-bg) 80%, #0b0d10 20%);
   padding: 0;
   cursor: pointer;
   transition: background-color .15s ease, border-color .15s ease;
@@ -2879,8 +2760,8 @@ html.lcgs-local-notes-active .${MESSAGE_NOTE_BUTTON_CLASS}:focus-visible {
 }
 
 #${EXPORT_MODAL_ID} .lcgs-toggle-row input:checked {
-  background: #c026d3;
-  border-color: #d946ef;
+  background: var(--lcgs-accent);
+  border-color: color-mix(in srgb, var(--lcgs-accent) 76%, white 24%);
 }
 
 #${EXPORT_MODAL_ID} .lcgs-toggle-row input:checked::after {
@@ -2897,11 +2778,49 @@ html.lcgs-local-notes-active .${MESSAGE_NOTE_BUTTON_CLASS}:focus-visible {
   cursor: not-allowed;
 }
 
+#${EXPORT_MODAL_ID} .lcgs-turn-picker[hidden] {
+  display: none !important;
+}
+
+#${EXPORT_MODAL_ID} .lcgs-turn-picker {
+  display: grid;
+  gap: 6px;
+  max-height: 190px;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--lcgs-border) 55%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--lcgs-surface) 64%, transparent);
+}
+
+#${EXPORT_MODAL_ID} .lcgs-turn-option {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 4px 2px;
+  color: var(--lcgs-text);
+  font-weight: 650;
+}
+
+#${EXPORT_MODAL_ID} .lcgs-turn-option input {
+  width: 16px;
+  min-height: 16px;
+  accent-color: var(--lcgs-accent);
+}
+
+#${EXPORT_MODAL_ID} .lcgs-turn-option span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 #${EXPORT_MODAL_ID} button {
   min-height: 40px;
   border: 1px solid color-mix(in srgb, var(--lcgs-border) 70%, transparent);
   border-radius: 10px !important;
-  background: #522052 !important;
+  background: color-mix(in srgb, var(--lcgs-surface) 78%, transparent) !important;
   color: var(--lcgs-text) !important;
   padding: 0 14px;
   font-weight: 800;
@@ -2909,8 +2828,8 @@ html.lcgs-local-notes-active .${MESSAGE_NOTE_BUTTON_CLASS}:focus-visible {
 }
 
 #${EXPORT_MODAL_ID} .lcgs-primary {
-  background: #7b2788 !important;
-  border-color: #7b2788 !important;
+  background: color-mix(in srgb, var(--lcgs-accent) 72%, var(--lcgs-surface) 28%) !important;
+  border-color: var(--lcgs-accent) !important;
 }
 
 html:not(.lcgs-image-viewer-active) [data-testid="webpage-citation-pill"] {
@@ -2943,6 +2862,17 @@ html:not(.lcgs-image-viewer-active) [data-testid="webpage-citation-pill"] a:hove
 @media (max-width: 760px) {
   #${EXPORT_MODAL_ID} .lcgs-modal-body {
     grid-template-columns: 1fr;
+  }
+
+  #${EXPORT_MODAL_ID} .lcgs-modal {
+    max-height: calc(100vh - 20px);
+    overflow: auto;
+  }
+
+  #${EXPORT_MODAL_ID} .lcgs-panel + .lcgs-panel {
+    padding-top: 16px;
+    border-top: 1px solid color-mix(in srgb, var(--lcgs-border) 54%, transparent);
+    border-left: 0;
   }
 }
 `;
@@ -3013,8 +2943,15 @@ html:not(.lcgs-image-viewer-active) [data-testid="webpage-citation-pill"] a:hove
   }
 
   function escapeXmlText(value) {
-    return String(value)
-      .replace(/[^\u0009\u000a\u000d\u0020-\ud7ff\ue000-\ufffd]/g, "")
+    return Array.from(String(value))
+      .filter((character) => {
+        const codePoint = character.codePointAt(0);
+        return codePoint === 0x09 || codePoint === 0x0a || codePoint === 0x0d
+          || (codePoint >= 0x20 && codePoint <= 0xd7ff)
+          || (codePoint >= 0xe000 && codePoint <= 0xfffd)
+          || (codePoint >= 0x10000 && codePoint <= 0x10ffff);
+      })
+      .join("")
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
@@ -3022,12 +2959,14 @@ html:not(.lcgs-image-viewer-active) [data-testid="webpage-citation-pill"] a:hove
 
   function sanitizeFilename(value) {
     const fallback = "chatgpt-export";
-    return (value || fallback)
+    const cleaned = (value || fallback)
       .replace(/^ChatGPT\s*[-\u2013]\s*/i, "")
       .replace(/[<>:"/\\|?*\u0000-\u001f]/g, " ")
       .replace(/\s+/g, " ")
       .trim()
-      .slice(0, 80) || fallback;
+      .replace(/[. ]+$/g, "");
+    const shortened = Array.from(cleaned).slice(0, 80).join("") || fallback;
+    return /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(shortened) ? `_${shortened}` : shortened;
   }
 
   function getConversationTitle() {
@@ -3057,14 +2996,63 @@ html:not(.lcgs-image-viewer-active) [data-testid="webpage-citation-pill"] a:hove
     return stripRenderedSpeakerPrefix(clone.innerText.replace(/\n{3,}/g, "\n\n"));
   }
 
-  function getMessageParts(node) {
+  function getMessageParts(node, options = {}) {
     const clone = node.cloneNode(true);
-    clone.querySelectorAll(`button, svg, style, script, .stylergpt-message-timestamp, .${MESSAGE_NOTE_BUTTON_CLASS}, [aria-hidden='true'], [data-testid='copy-turn-button']`).forEach((item) => item.remove());
+    clone.querySelectorAll("button:has(.truncate):not([aria-label='Sources'])").forEach((button) => {
+      const name = button.querySelector(".truncate")?.textContent?.trim();
+      if (name) button.replaceWith(document.createTextNode(`\n[Attachment: ${name}]\n`));
+    });
+    clone.querySelectorAll("table").forEach((table) => {
+      const rows = Array.from(table.rows).map((row) => Array.from(row.cells).map((cell) => cell.textContent.replace(/\s+/g, " ").trim().replace(/\|/g, "\\|")));
+      if (!rows.length) return;
+      const width = Math.max(...rows.map((row) => row.length));
+      const normalized = rows.map((row) => [...row, ...Array(Math.max(0, width - row.length)).fill("")]);
+      const markdown = [
+        `| ${normalized[0].join(" | ")} |`,
+        `| ${Array(width).fill("---").join(" | ")} |`,
+        ...normalized.slice(1).map((row) => `| ${row.join(" | ")} |`)
+      ].join("\n");
+      table.replaceWith(document.createTextNode(`\n${markdown}\n`));
+    });
+    clone.querySelectorAll("li").forEach((item) => {
+      const list = item.parentElement;
+      const siblings = list ? Array.from(list.children).filter((child) => child.tagName === "LI") : [];
+      const prefix = list?.tagName === "OL" ? `${siblings.indexOf(item) + 1}. ` : "- ";
+      item.prepend(document.createTextNode(prefix));
+      item.append(document.createTextNode("\n"));
+    });
+    clone.querySelectorAll("h1, h2, h3, h4, h5, h6").forEach((heading) => {
+      const level = Number(heading.tagName.slice(1));
+      heading.prepend(document.createTextNode(`${"#".repeat(level)} `));
+      heading.append(document.createTextNode("\n"));
+    });
+    clone.querySelectorAll("blockquote").forEach((quote) => {
+      quote.textContent = quote.textContent.split("\n").map((line) => `> ${line}`).join("\n");
+    });
+    clone.querySelectorAll("img[alt]").forEach((image) => {
+      const alt = image.getAttribute("alt")?.trim();
+      if (alt) image.replaceWith(document.createTextNode(`[Image: ${alt}]`));
+    });
+    if (options.includeSources) {
+      clone.querySelectorAll("a[href^='http']").forEach((link) => {
+        const href = link.getAttribute("href");
+        const label = link.textContent?.trim();
+        if (href && label && label !== href) link.append(document.createTextNode(` (${href})`));
+      });
+    }
+    clone.querySelectorAll(`[data-lcgs-memory-label], button, svg, style, script, .stylergpt-message-timestamp, .${MESSAGE_NOTE_BUTTON_CLASS}, [aria-hidden='true'], [data-testid='copy-turn-button']`).forEach((item) => item.remove());
+    if (!options.includeSources) {
+      clone.querySelectorAll("[data-testid*='citation' i], [data-testid*='source' i], [class*='citation' i]").forEach((item) => item.remove());
+    }
+    if (!options.includeThinking) {
+      clone.querySelectorAll("[data-testid*='reasoning' i], [data-testid*='thinking' i], [class*='reasoning' i]").forEach((item) => item.remove());
+    }
 
     const codeBlocks = [];
+    const markerToken = `LCGS_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
     clone.querySelectorAll("pre").forEach((pre) => {
-      const marker = `\n\n[[LCGS_CODE_BLOCK_${codeBlocks.length}]]\n\n`;
-      const code = pre.querySelector("code")?.innerText || pre.innerText || "";
+      const marker = `\n\n[[${markerToken}_${codeBlocks.length}]]\n\n`;
+      const code = pre.querySelector("code")?.textContent || pre.textContent || "";
       const language = Array.from(pre.querySelector("code")?.classList || [])
         .find((name) => name.startsWith("language-"))
         ?.replace("language-", "") || "";
@@ -3074,7 +3062,7 @@ html:not(.lcgs-image-viewer-active) [data-testid="webpage-citation-pill"] a:hove
 
     const text = clone.innerText.replace(/\n{3,}/g, "\n\n").trim();
     const parts = [];
-    text.split(/\[\[LCGS_CODE_BLOCK_(\d+)\]\]/).forEach((chunk, index, chunks) => {
+    text.split(new RegExp(`\\[\\[${markerToken}_(\\d+)\\]\\]`)).forEach((chunk, index) => {
       if (index % 2 === 1) {
         const block = codeBlocks[Number(chunk)];
         if (block) parts.push(block);
@@ -3087,36 +3075,32 @@ html:not(.lcgs-image-viewer-active) [data-testid="webpage-citation-pill"] a:hove
     return cleanMessageParts(parts.length ? parts : [{ type: "text", text }]);
   }
 
-  function getScrollContainer() {
-    const main = document.querySelector("main#main") || document.querySelector("main");
-    const candidates = [
-      main?.querySelector("[data-scroll-root]"),
-      main?.querySelector(".overflow-y-auto"),
-      main,
-      document.scrollingElement
-    ].filter(Boolean);
-
-    return candidates.find((node) => node.scrollHeight > node.clientHeight + 80) || document.scrollingElement;
-  }
-
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  function readRenderedMessages(target, seen) {
-    const nodes = document.querySelectorAll("main section[data-turn], [data-message-author-role]");
+  function readRenderedMessages(target, seen, options = {}) {
+    const roots = [];
+    const rootSet = new Set();
+    document.querySelectorAll("main#main #thread section[data-turn], main#main #thread [data-message-author-role]").forEach((candidate) => {
+      const node = candidate.closest("section[data-turn]") || candidate.closest("[data-message-id]") || candidate;
+      if (!rootSet.has(node)) {
+        rootSet.add(node);
+        roots.push(node);
+      }
+    });
 
-    nodes.forEach((node, index) => {
+    roots.forEach((node, index) => {
       const roleNode = node.matches("[data-message-author-role]") ? node : node.querySelector("[data-message-author-role]");
       const role = node.getAttribute("data-turn") || roleNode?.getAttribute("data-message-author-role") || "message";
       if (role !== "user" && role !== "assistant" && role !== "system") return;
 
-      const parts = getMessageParts(node);
+      const parts = getMessageParts(node, options);
       const text = parts.map((part) => part.text).join("\n\n").trim();
       if (!text) return;
 
       const messageId = node.closest("[data-message-id]")?.getAttribute("data-message-id") || roleNode?.closest("[data-message-id]")?.getAttribute("data-message-id") || "";
-      const key = messageId || `${role}:${text}`;
+      const key = messageId || `${role}:${index}`;
       if (seen.has(key)) return;
       seen.add(key);
 
@@ -3126,6 +3110,7 @@ html:not(.lcgs-image-viewer-active) [data-testid="webpage-citation-pill"] a:hove
         text,
         parts,
         messageId: messageId || null,
+        exportKey: key,
         noteKey: getMessageNoteKeyFromParts(role, messageId, text),
         sourceIndex: index
       });
@@ -3180,51 +3165,14 @@ html:not(.lcgs-image-viewer-active) [data-testid="webpage-citation-pill"] a:hove
     const seen = new Set();
     const messages = [];
 
-    if (options.scope === "visible") {
-      readRenderedMessages(messages, seen);
-      messages.forEach((message, index) => {
-        message.index = index + 1;
-      });
-      return {
-        title: getConversationTitle(),
-        url: location.href,
-        exportedAt: new Date().toISOString(),
-        options,
-        messages
-      };
+    readRenderedMessages(messages, seen, options);
+    if (options.scope === "selected" && Array.isArray(options.selectedMessageKeys)) {
+      const selected = new Set(options.selectedMessageKeys);
+      messages.splice(0, messages.length, ...messages.filter((message) => selected.has(message.exportKey)));
     }
-
-    const scroller = getScrollContainer();
-    const originalTop = scroller.scrollTop;
-
-    scroller.scrollTop = 0;
-    await sleep(180);
-
-    let lastTop = -1;
-    let stillCount = 0;
-    for (let step = 0; step < 90; step += 1) {
-      readRenderedMessages(messages, seen);
-
-      if (scroller.scrollTop === lastTop) {
-        stillCount += 1;
-      } else {
-        stillCount = 0;
-      }
-
-      if (stillCount > 2 && scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 8) {
-        break;
-      }
-
-      lastTop = scroller.scrollTop;
-      scroller.scrollTop = Math.min(scroller.scrollTop + Math.max(320, Math.floor(scroller.clientHeight * 0.72)), scroller.scrollHeight);
-      await sleep(110);
-    }
-
-    readRenderedMessages(messages, seen);
     messages.forEach((message, index) => {
       message.index = index + 1;
     });
-    scroller.scrollTop = originalTop;
 
     return {
       title: getConversationTitle(),
@@ -3304,6 +3252,8 @@ html:not(.lcgs-image-viewer-active) [data-testid="webpage-citation-pill"] a:hove
   }
 
   function conversationToHtml(conversation) {
+    const pageMargin = conversation.options.margin === "narrow" ? "12mm" : conversation.options.margin === "wide" ? "25mm" : "18mm";
+    const dark = Boolean(conversation.options.darkTheme);
     const body = conversation.messages.map((message) => `
       <section class="message ${message.role}">
         <h2>${escapeHtml(speakerLabel(message.role))}</h2>
@@ -3316,15 +3266,18 @@ html:not(.lcgs-image-viewer-active) [data-testid="webpage-citation-pill"] a:hove
 <html>
 <head>
 <meta charset="utf-8">
-<title>${escapeHtml(conversation.title)}</title>
+<title>${escapeHtml(conversation.printFilename || conversation.title)}</title>
 <style>
-body{font-family:Arial,sans-serif;line-height:1.55;color:#1f2933;margin:40px}
+@page{margin:${pageMargin}}
+body{font-family:Arial,sans-serif;font-size:${Number(conversation.options.fontSize) || 14}px;line-height:1.55;color:${dark ? "#f4edf6" : "#1f2933"};background:${dark ? "#17131f" : "#fff"};margin:0}
 h1{font-size:24px;margin:0 0 8px}
-.meta{color:#667085;font-size:12px;margin-bottom:28px}
-.message{border-top:1px solid #ddd;padding:18px 0}
+.meta{color:${dark ? "#c9b2d4" : "#667085"};font-size:12px;margin-bottom:28px}
+.message{border-top:1px solid ${dark ? "#57385f" : "#ddd"};padding:18px 0;break-inside:avoid-page}
+${conversation.options.addChatBubbles ? `.message{margin:10px 0;padding:16px;border:0;border-radius:8px}.message.user{background:${dark ? "#302038" : "#f1e7f3"}}.message.assistant{background:${dark ? "#23252b" : "#f3f4f6"}}` : ""}
 h2{text-transform:capitalize;font-size:14px;margin:0 0 10px;color:#4d1f52}
 pre{white-space:pre-wrap;font:13px/1.55 Consolas,monospace;margin:0}
 .note{margin-top:12px;border-left:3px solid #8b3a92;padding-left:10px;color:#5c4661}
+.code{margin-top:8px;padding:12px;background:${dark ? "#0f0d14" : "#f2f3f5"};border-radius:6px}
 </style>
 </head>
 <body>
@@ -3334,6 +3287,31 @@ ${conversation.note ? `<section class="message"><h2>Conversation Notes</h2><pre 
 ${body}
 </body>
 </html>`;
+  }
+
+  function printConversation(conversation, printWindow = null) {
+    const html = conversationToHtml(conversation);
+    if (printWindow && !printWindow.closed) {
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.addEventListener("afterprint", () => printWindow.close(), { once: true });
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+      }, 0);
+      return;
+    }
+    const frame = document.createElement("iframe");
+    frame.setAttribute("aria-hidden", "true");
+    frame.style.cssText = "position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none";
+    frame.srcdoc = html;
+    frame.addEventListener("load", () => {
+      frame.contentWindow?.focus();
+      frame.contentWindow?.print();
+      setTimeout(() => frame.remove(), 60000);
+    }, { once: true });
+    document.body.appendChild(frame);
   }
 
   function messagePartsToHtml(message) {
@@ -3454,23 +3432,34 @@ ${body}
     }
     if (conversation.options.includeTitle || conversation.options.includeLink) paragraphs.push({ text: "", kind: "text" });
     conversation.messages.forEach((message) => {
-      paragraphs.push({ text: `${speakerLabel(message.role)}:`, kind: "speaker" });
+      paragraphs.push({ text: `${speakerLabel(message.role)}:`, kind: "speaker", role: message.role });
       (message.parts || [{ type: "text", text: message.text }]).forEach((part) => {
-        paragraphs.push({ text: part.text, kind: part.type });
+        paragraphs.push({ text: part.text, kind: part.type, role: message.role });
       });
       if (message.note) {
-        paragraphs.push({ text: `Note: ${message.note}`, kind: "note" });
+        paragraphs.push({ text: `Note: ${message.note}`, kind: "note", role: message.role });
       }
       paragraphs.push({ text: "", kind: "text" });
     });
 
+    const fontHalfPoints = Math.max(18, Math.min(40, (Number(conversation.options.fontSize) || 14) * 2));
+    const pageMargin = conversation.options.margin === "narrow" ? 720 : conversation.options.margin === "wide" ? 1800 : 1080;
     const body = paragraphs.map((paragraph) => {
-      const runProps = paragraph.kind === "code" ? "<w:rPr><w:rFonts w:ascii=\"Consolas\" w:hAnsi=\"Consolas\"/><w:color w:val=\"F8F8F2\"/></w:rPr>" : "";
+      const runStyle = [
+        `<w:sz w:val="${paragraph.kind === "title" ? fontHalfPoints + 10 : fontHalfPoints}"/>`,
+        paragraph.kind === "code" ? "<w:rFonts w:ascii=\"Consolas\" w:hAnsi=\"Consolas\"/><w:color w:val=\"F8F8F2\"/>" : "",
+        ["title", "speaker"].includes(paragraph.kind) ? "<w:b/>" : ""
+      ].join("");
+      const runProps = `<w:rPr>${runStyle}</w:rPr>`;
+      const bubbleFill = paragraph.role === "user" ? "E9D7ED" : "F1EDF4";
+      const bubbleProps = conversation.options.addChatBubbles && paragraph.role && paragraph.kind !== "code"
+        ? `<w:shd w:fill="${bubbleFill}"/><w:spacing w:before="80" w:after="80"/>`
+        : "";
       const pProps = paragraph.kind === "code"
         ? "<w:pPr><w:shd w:fill=\"282A36\"/><w:spacing w:before=\"160\" w:after=\"160\"/></w:pPr>"
         : paragraph.kind === "note"
           ? "<w:pPr><w:shd w:fill=\"EFE7F2\"/><w:spacing w:before=\"120\" w:after=\"120\"/></w:pPr>"
-          : "";
+          : bubbleProps ? `<w:pPr>${bubbleProps}</w:pPr>` : "";
       const runs = escapeXmlText(paragraph.text).split("\n").map((line) => `<w:r>${runProps}<w:t xml:space="preserve">${line}</w:t></w:r>`).join("<w:r><w:br/></w:r>");
       return `<w:p>${pProps}${runs}</w:p>`;
     }).join("");
@@ -3486,153 +3475,9 @@ ${body}
       },
       {
         name: "word/document.xml",
-        content: `<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr></w:body></w:document>`
+        content: `<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="${pageMargin}" w:right="${pageMargin}" w:bottom="${pageMargin}" w:left="${pageMargin}"/></w:sectPr></w:body></w:document>`
       }
     ]);
-  }
-
-  function createPdf(conversation) {
-    const fontSize = Number(conversation.options.fontSize) || 14;
-    const margin = conversation.options.margin === "narrow" ? 32 : conversation.options.margin === "wide" ? 72 : 50;
-    const lineHeight = Math.max(12, fontSize + 4);
-    const maxChars = Math.max(38, Math.floor((612 - margin * 2) / (fontSize * 0.58)));
-    const pages = [];
-    let commands = [];
-    let y = 792 - margin;
-
-    function pdfText(value) {
-      return String(value)
-        .replace(/[^\x09\x0a\x0d\x20-\x7e]/g, "")
-        .replace(/\\/g, "\\\\")
-        .replace(/\(/g, "\\(")
-        .replace(/\)/g, "\\)");
-    }
-
-    function newPage() {
-      if (commands.length) pages.push(commands);
-      commands = [];
-      if (conversation.options.darkTheme) {
-        commands.push("0.165 0.071 0.173 rg 0 0 612 792 re f");
-      }
-      y = 792 - margin;
-    }
-
-    function ensureSpace(height) {
-      if (y - height < margin) newPage();
-    }
-
-    function wrapText(text, chars) {
-      const result = [];
-      String(text).split("\n").forEach((line) => {
-        const value = line || " ";
-        for (let i = 0; i < value.length || i === 0; i += chars) {
-          result.push(value.slice(i, i + chars) || " ");
-        }
-      });
-      return result;
-    }
-
-    function drawLines(lines, x, startY, size, color) {
-      const escaped = lines.map((line) => `(${pdfText(line)}) Tj T*`).join(" ");
-      commands.push(`${color} BT /F1 ${size} Tf ${x} ${startY} Td ${Math.max(12, size + 4)} TL ${escaped} ET`);
-    }
-
-    newPage();
-
-    if (conversation.options.includeTitle) {
-      ensureSpace(34);
-      drawLines([conversation.title], margin, y, fontSize + 4, conversation.options.darkTheme ? "1 1 1 rg" : "0.1 0.1 0.1 rg");
-      y -= lineHeight + 14;
-    }
-
-    if (conversation.options.includeLink) {
-      const linkLines = wrapText(conversation.url, maxChars);
-      ensureSpace(linkLines.length * lineHeight + 10);
-      drawLines(linkLines, margin, y, Math.max(9, fontSize - 3), conversation.options.darkTheme ? "0.75 0.62 0.82 rg" : "0.35 0.25 0.4 rg");
-      y -= linkLines.length * lineHeight + 10;
-    }
-
-    if (conversation.note) {
-      const noteLines = wrapText(`Conversation Notes: ${conversation.note}`, maxChars - 4);
-      ensureSpace(noteLines.length * lineHeight + 16);
-      drawLines(noteLines, margin + 10, y, Math.max(9, fontSize - 2), conversation.options.darkTheme ? "0.90 0.74 0.95 rg" : "0.32 0.20 0.36 rg");
-      y -= noteLines.length * lineHeight + 14;
-    }
-
-    conversation.messages.forEach((message) => {
-      const label = `${speakerLabel(message.role)}:`;
-      const parts = [
-        ...(message.parts || [{ type: "text", text: message.text }]),
-        ...(message.note ? [{ type: "note", text: `Note: ${message.note}` }] : [])
-      ];
-      const renderedParts = parts.map((part) => ({
-        ...part,
-        lines: wrapText(part.text, maxChars - 4)
-      }));
-      const contentLines = renderedParts.reduce((sum, part) => sum + part.lines.length, 0);
-      const codeExtra = renderedParts.filter((part) => part.type === "code").length * 12;
-      const blockHeight = (contentLines + 1) * lineHeight + 22 + codeExtra;
-      ensureSpace(blockHeight + 12);
-
-      if (conversation.options.addChatBubbles) {
-        if (message.role === "user") {
-          commands.push(`${conversation.options.darkTheme ? "0.13 0.05 0.14" : "0.91 0.78 0.95"} rg ${margin} ${y - blockHeight + 6} ${612 - margin * 2} ${blockHeight} re f`);
-        } else {
-          commands.push(`${conversation.options.darkTheme ? "0.12 0.14 0.2" : "0.94 0.94 0.98"} rg ${margin} ${y - blockHeight + 6} ${612 - margin * 2} ${blockHeight} re f`);
-        }
-      }
-
-      drawLines([label], margin + 14, y - 8, Math.max(10, fontSize - 2), conversation.options.darkTheme ? "0.96 0.72 1 rg" : "0.36 0.11 0.39 rg");
-      let partY = y - lineHeight - 12;
-      renderedParts.forEach((part) => {
-        if (part.type === "code") {
-          const codeHeight = part.lines.length * lineHeight + 12;
-          commands.push(`${conversation.options.darkTheme ? "0.08 0.09 0.13" : "0.88 0.88 0.92"} rg ${margin + 10} ${partY - codeHeight + lineHeight - 5} ${612 - margin * 2 - 20} ${codeHeight} re f`);
-          drawLines(part.lines, margin + 18, partY, Math.max(8, fontSize - 1), conversation.options.darkTheme ? "0.95 0.95 0.90 rg" : "0.08 0.08 0.09 rg");
-          partY -= codeHeight + 4;
-        } else if (part.type === "note") {
-          drawLines(part.lines, margin + 14, partY, Math.max(9, fontSize - 2), conversation.options.darkTheme ? "0.90 0.74 0.95 rg" : "0.32 0.20 0.36 rg");
-          partY -= part.lines.length * lineHeight;
-        } else {
-          drawLines(part.lines, margin + 14, partY, fontSize, conversation.options.darkTheme ? "1 1 1 rg" : "0.08 0.08 0.09 rg");
-          partY -= part.lines.length * lineHeight;
-        }
-      });
-      y -= blockHeight + 10;
-    });
-
-    if (commands.length) pages.push(commands);
-
-    const fontId = 3 + pages.length * 2;
-    const kids = pages.map((_, index) => `${3 + index * 2} 0 R`).join(" ");
-    const objects = [
-      "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n",
-      `2 0 obj << /Type /Pages /Kids [${kids}] /Count ${pages.length} >> endobj\n`
-    ];
-
-    pages.forEach((pageCommands, index) => {
-      const pageId = 3 + index * 2;
-      const contentId = pageId + 1;
-      const stream = pageCommands.join("\n");
-      objects.push(`${pageId} 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 ${fontId} 0 R >> >> /Contents ${contentId} 0 R >> endobj\n`);
-      objects.push(`${contentId} 0 obj << /Length ${stream.length} >> stream\n${stream}\nendstream endobj\n`);
-    });
-
-    objects.push(`${fontId} 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Courier >> endobj\n`);
-
-    let pdf = "%PDF-1.4\n";
-    const offsets = [0];
-    objects.forEach((object) => {
-      offsets.push(pdf.length);
-      pdf += object;
-    });
-    const xref = pdf.length;
-    pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-    offsets.slice(1).forEach((offset) => {
-      pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
-    });
-    pdf += `trailer << /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
-    return new Blob([pdf], { type: "application/pdf" });
   }
 
   function defaultExportOptions(format) {
@@ -3645,8 +3490,9 @@ ${body}
       includeTitle: true,
       includeLink: true,
       includeNotes: false,
+      includeSources: true,
+      includeThinking: false,
       addChatBubbles: true,
-      hidePageNumbers: true,
       darkTheme: true
     };
   }
@@ -3664,17 +3510,38 @@ ${body}
       return;
     }
 
-    if (format === "json") {
-      downloadBlob(`${filename}.json`, "application/json;charset=utf-8", JSON.stringify(conversation, null, 2));
-    } else if (format === "md") {
-      downloadBlob(`${filename}.md`, "text/markdown;charset=utf-8", conversationToMarkdown(conversation));
-    } else if (format === "txt") {
-      downloadBlob(`${filename}.txt`, "text/plain;charset=utf-8", conversationToText(conversation));
+    const artifacts = {
+      json: ["application/json;charset=utf-8", JSON.stringify(conversation, null, 2)],
+      md: ["text/markdown;charset=utf-8", conversationToMarkdown(conversation)],
+      txt: ["text/plain;charset=utf-8", conversationToText(conversation)]
+    };
+    if (options.copyOnly && artifacts[format]) {
+      await copyTextToClipboard(artifacts[format][1]);
+    } else if (artifacts[format]) {
+      downloadBlob(`${filename}.${format}`, artifacts[format][0], artifacts[format][1]);
     } else if (format === "docx") {
       downloadBlob(`${filename}.docx`, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", createDocx(conversation));
     } else if (format === "pdf") {
-      downloadBlob(`${filename}.pdf`, "application/pdf", createPdf(conversation));
+      conversation.printFilename = filename;
+      printConversation(conversation, options.printWindow);
     }
+  }
+
+  function renderExportTurnPicker(modal) {
+    const picker = modal.querySelector("#lcgs-export-turns");
+    if (!picker) return;
+    const messages = [];
+    readRenderedMessages(messages, new Set(), { includeSources: true, includeThinking: true });
+    modal.lcgsExportMessages = messages;
+    picker.innerHTML = messages.map((message, index) => {
+      const preview = message.text.replace(/\s+/g, " ").trim().slice(0, 90) || speakerLabel(message.role);
+      return `<label class="lcgs-turn-option"><input type="checkbox" data-turn-index="${index}" checked><span>${escapeHtml(`${index + 1}. ${speakerLabel(message.role)} - ${preview}`)}</span></label>`;
+    }).join("") || `<span class="lcgs-muted-line">No rendered turns found.</span>`;
+  }
+
+  function updateExportScope(modal) {
+    const picker = modal.querySelector("#lcgs-export-turns");
+    if (picker) picker.hidden = modal.querySelector("#lcgs-export-scope").value !== "selected";
   }
 
   function ensureExportModal() {
@@ -3693,7 +3560,8 @@ ${body}
           <section class="lcgs-panel">
             <h3>Document</h3>
             <label>File name <input id="lcgs-export-filename" type="text"></label>
-            <label>Scope <select id="lcgs-export-scope"><option value="conversation">Full conversation</option><option value="visible">Visible messages</option><option value="selection">Selected text</option></select></label>
+            <label>Scope <select id="lcgs-export-scope"><option value="conversation">All rendered turns</option><option value="selected">Selected turns</option><option value="selection">Selected text</option></select></label>
+            <div id="lcgs-export-turns" class="lcgs-turn-picker" aria-label="Select turns" hidden></div>
             <label data-option="layout">Margins <select id="lcgs-export-margin"><option value="normal">Normal</option><option value="narrow">Narrow</option><option value="wide">Wide</option></select></label>
             <label data-option="layout">Font size <select id="lcgs-export-font-size"><option>12</option><option selected>14</option><option>16</option><option>18</option></select></label>
           </section>
@@ -3702,8 +3570,9 @@ ${body}
             <label class="lcgs-toggle-row">Include title <input id="lcgs-export-include-title" type="checkbox" checked></label>
             <label class="lcgs-toggle-row">Include link <input id="lcgs-export-include-link" type="checkbox" checked></label>
             <label class="lcgs-toggle-row">Include notes <input id="lcgs-export-include-notes" type="checkbox"></label>
+            <label class="lcgs-toggle-row">Include visible sources <input id="lcgs-export-include-sources" type="checkbox" checked></label>
+            <label class="lcgs-toggle-row">Include visible thinking <input id="lcgs-export-include-thinking" type="checkbox"></label>
             <label class="lcgs-toggle-row" data-option="visual">Add chat bubbles <input id="lcgs-export-chat-bubbles" type="checkbox" checked></label>
-            <label class="lcgs-toggle-row" data-option="pages">Hide page numbers <input id="lcgs-export-hide-pages" type="checkbox" checked></label>
             <label class="lcgs-toggle-row" data-option="visual">Enable dark theme <input id="lcgs-export-dark-theme" type="checkbox" checked></label>
           </section>
         </div>
@@ -3711,6 +3580,7 @@ ${body}
           <span></span>
           <span>
             <button type="button" data-modal-close>Cancel</button>
+            <button type="button" id="lcgs-export-copy">Copy</button>
             <button type="button" class="lcgs-primary" id="lcgs-export-confirm">Download</button>
           </span>
         </footer>
@@ -3728,17 +3598,40 @@ ${body}
       if (event.target === modal) modal.hidden = true;
     });
 
+    modal.querySelector("#lcgs-export-scope").addEventListener("change", () => updateExportScope(modal));
+
     modal.querySelector("#lcgs-export-confirm").addEventListener("click", async () => {
       const options = readExportOptions();
+      const printWindow = options.format === "pdf" ? window.open("", "_blank") : null;
       const confirm = modal.querySelector("#lcgs-export-confirm");
+      let failed = false;
       confirm.textContent = "Exporting...";
       confirm.disabled = true;
       try {
-        await exportConversation(options);
+        await exportConversation({ ...options, printWindow });
         modal.hidden = true;
+      } catch (error) {
+        failed = true;
+        printWindow?.close();
       } finally {
-        confirm.textContent = `Download ${options.format.toUpperCase()}`;
+        confirm.textContent = failed ? "Try again" : options.format === "pdf" ? "Print PDF" : `Download ${options.format.toUpperCase()}`;
         confirm.disabled = false;
+      }
+    });
+
+    modal.querySelector("#lcgs-export-copy").addEventListener("click", async () => {
+      const options = { ...readExportOptions(), copyOnly: true };
+      const copy = modal.querySelector("#lcgs-export-copy");
+      copy.textContent = "Copying...";
+      copy.disabled = true;
+      try {
+        await exportConversation(options);
+        copy.textContent = "Copied";
+      } catch (error) {
+        copy.textContent = "Copy failed";
+      } finally {
+        copy.disabled = false;
+        setTimeout(() => { copy.textContent = "Copy"; }, 1200);
       }
     });
   }
@@ -3756,11 +3649,15 @@ ${body}
     modal.querySelector("#lcgs-export-include-title").checked = options.includeTitle;
     modal.querySelector("#lcgs-export-include-link").checked = options.includeLink;
     modal.querySelector("#lcgs-export-include-notes").checked = options.includeNotes;
+    modal.querySelector("#lcgs-export-include-sources").checked = options.includeSources;
+    modal.querySelector("#lcgs-export-include-thinking").checked = options.includeThinking;
     modal.querySelector("#lcgs-export-chat-bubbles").checked = options.addChatBubbles;
-    modal.querySelector("#lcgs-export-hide-pages").checked = options.hidePageNumbers;
     modal.querySelector("#lcgs-export-dark-theme").checked = options.darkTheme;
-    modal.querySelector("#lcgs-export-confirm").textContent = `Download ${format === "md" ? "Markdown" : format.toUpperCase()}`;
+    modal.querySelector("#lcgs-export-confirm").textContent = format === "pdf" ? "Print PDF" : `Download ${format === "md" ? "Markdown" : format.toUpperCase()}`;
+    modal.querySelector("#lcgs-export-copy").hidden = !["md", "txt", "json"].includes(format);
     updateExportOptionAvailability(modal, format);
+    renderExportTurnPicker(modal);
+    updateExportScope(modal);
     modal.hidden = false;
     modal.querySelector("#lcgs-export-filename").focus();
   }
@@ -3768,11 +3665,9 @@ ${body}
   function updateExportOptionAvailability(modal, format) {
     const supportsLayout = format === "pdf" || format === "docx";
     const supportsVisual = format === "pdf" || format === "docx";
-    const supportsPages = format === "pdf";
     const rules = {
       layout: supportsLayout,
-      visual: supportsVisual,
-      pages: supportsPages
+      visual: supportsVisual
     };
 
     modal.querySelectorAll("[data-option]").forEach((row) => {
@@ -3795,9 +3690,14 @@ ${body}
       includeTitle: modal.querySelector("#lcgs-export-include-title").checked,
       includeLink: modal.querySelector("#lcgs-export-include-link").checked,
       includeNotes: modal.querySelector("#lcgs-export-include-notes").checked,
+      includeSources: modal.querySelector("#lcgs-export-include-sources").checked,
+      includeThinking: modal.querySelector("#lcgs-export-include-thinking").checked,
       addChatBubbles: modal.querySelector("#lcgs-export-chat-bubbles").checked,
-      hidePageNumbers: modal.querySelector("#lcgs-export-hide-pages").checked,
-      darkTheme: modal.querySelector("#lcgs-export-dark-theme").checked
+      darkTheme: modal.querySelector("#lcgs-export-dark-theme").checked,
+      selectedMessageKeys: Array.from(modal.querySelectorAll("#lcgs-export-turns input:checked"))
+        .map((input) => modal.lcgsExportMessages?.[Number(input.dataset.turnIndex)])
+        .filter(Boolean)
+        .map((message) => message.exportKey)
     };
   }
 
@@ -3844,12 +3744,33 @@ ${body}
     });
 
     updateExporterVisibility();
-    const observer = new MutationObserver(updateExporterVisibility);
-    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  function getHeaderActionAnchor() {
+    const regions = Array.from(document.querySelectorAll("#page-header, #calpico-page-header"));
+    for (const region of regions) {
+      const buttons = Array.from(region.querySelectorAll("button, a[role='button'], [role='button']"));
+      const anchor = buttons.find((button) => {
+        if (button.closest(`#${EXPORT_ID}, [role='dialog']`)) return false;
+        const label = `${button.getAttribute("aria-label") || ""} ${button.getAttribute("data-testid") || ""} ${button.textContent || ""}`;
+        return /^\s*share(?:\s+share)?\s*$/i.test(label);
+      });
+      if (anchor?.parentElement) return anchor;
+    }
+    return null;
+  }
+
+  function mountExporterInHeader(root) {
+    const anchor = getHeaderActionAnchor();
+    if (!anchor?.parentElement) return false;
+    if (root.parentElement !== anchor.parentElement || root.nextElementSibling !== anchor) {
+      anchor.parentElement.insertBefore(root, anchor);
+    }
+    return true;
   }
 
   function hasExportableConversation() {
-    return document.querySelectorAll("[data-message-author-role]").length > 0;
+    return Boolean(document.querySelector("main#main #thread section[data-turn], main#main #thread [data-message-author-role]"));
   }
 
   function updateExporterVisibility() {
@@ -3858,8 +3779,9 @@ ${body}
     const enabled = document.documentElement.dataset.localChatgptStyler === "on";
     const zenMode = document.documentElement.classList.contains("lcgs-zen-mode-active");
     const hasConversation = hasExportableConversation();
-    root.hidden = !enabled || zenMode || !hasConversation;
-    if (!enabled || zenMode || !hasConversation) {
+    const mounted = hasConversation && mountExporterInHeader(root);
+    root.hidden = !enabled || zenMode || !hasConversation || !mounted;
+    if (!enabled || zenMode || !hasConversation || !mounted) {
       root.dataset.open = "false";
       root.querySelector(".lcgs-export-trigger")?.setAttribute("aria-expanded", "false");
       const navigatorRoot = document.getElementById(NAVIGATOR_ID);
@@ -4117,11 +4039,12 @@ ${body}
     const count = root?.querySelector("[data-history-count]");
     if (!count) return;
     if (activeSettings.advancedSafeMode || !activeSettings.promptHistory) {
-      count.textContent = "off";
+      if (count.textContent !== "off") count.textContent = "off";
       return;
     }
     const history = promptHistoryCache || await loadPromptHistory();
-    count.textContent = `${history.length} saved`;
+    const label = `${history.length} saved`;
+    if (count.textContent !== label) count.textContent = label;
   }
 
   async function renderPromptHistoryList() {
@@ -4304,7 +4227,7 @@ ${body}
   }
 
   function getNavigatorTargets() {
-    return Array.from(document.querySelectorAll("main section[data-turn], main [data-message-author-role]"))
+    return Array.from(document.querySelectorAll("main#main #thread section[data-turn], main#main #thread [data-message-author-role]"))
       .filter((node) => {
         if (node.closest(`#${NOTES_ID}, #${PROMPT_TOOLS_ID}, #${NAVIGATOR_ID}`)) return false;
         if (node.matches("[data-message-author-role]") && node.closest("section[data-turn]")) return false;
@@ -4389,15 +4312,16 @@ ${body}
         "[data-testid*='file' i]",
         "[aria-label*='attachment' i]",
         "[aria-label*='file' i]",
+        "[aria-label*='upload' i]",
         "a[href*='/files/']",
         "a[href*='file-']",
         "button:has(.truncate):has(svg):not([aria-label='Sources'])",
         "button:has(p.truncate):has(svg):not([aria-label='Sources'])",
-        "img",
-        "picture",
-        "canvas",
-        "video"
-      ], "[data-testid*='attachment' i], [data-testid*='file' i], [aria-label*='attachment' i], [aria-label*='file' i], a[href], button, img, picture, canvas, video").length;
+        "button:has(.not-prose.truncate):not([aria-label='Sources'])",
+        "a:has(.truncate)",
+        "img[src*='/files/'], img[src*='file-']",
+        "video[src], audio[src]"
+      ], "button, a, [data-testid*='attachment' i], [data-testid*='file' i], [aria-label*='attachment' i], [aria-label*='file' i], img, video, audio").length;
       const hasNote = Boolean(node.querySelector(`.${MESSAGE_NOTE_BUTTON_CLASS}[data-has-note="true"]`));
       if (hasNote) {
         counts.note = 1;
@@ -4421,45 +4345,9 @@ ${body}
   }
 
   function scrollNavigatorNodeIntoView(node) {
-    const scrollRoots = [];
-    let parent = node.parentElement;
-    while (parent && parent !== document.body) {
-      const style = getComputedStyle(parent);
-      const scrollable = /(auto|scroll)/.test(`${style.overflowY} ${style.overflow}`);
-      if (scrollable && parent.scrollHeight > parent.clientHeight) {
-        scrollRoots.push(parent);
-      }
-      parent = parent.parentElement;
-    }
-
-    const explicitRoots = [
-      document.querySelector("[data-scroll-root]"),
-      document.querySelector("main #thread"),
-      document.querySelector("main div#thread"),
-      document.scrollingElement
-    ].filter(Boolean);
-
-    [...new Set([...scrollRoots, ...explicitRoots])].forEach((root) => {
-      if (!root || root.scrollHeight <= root.clientHeight) return;
-      const nodeRect = node.getBoundingClientRect();
-      const rootRect = root === document.scrollingElement
-        ? { top: 0, height: window.innerHeight }
-        : root.getBoundingClientRect();
-      const delta = nodeRect.top - rootRect.top - (rootRect.height / 2) + (nodeRect.height / 2);
-      root.scrollTop += delta;
-    });
-
     node.scrollIntoView({ behavior: "auto", block: "center", inline: "nearest" });
-
-    let rect = node.getBoundingClientRect();
-    if (rect.top < 72 || rect.bottom > window.innerHeight - 96) {
-      window.scrollBy({
-        top: rect.top - Math.max(96, window.innerHeight * 0.32),
-        behavior: "auto"
-      });
-    }
-    rect = node.getBoundingClientRect();
-    return rect.top >= 0 && rect.bottom <= window.innerHeight;
+    const rect = node.getBoundingClientRect();
+    return rect.bottom > 64 && rect.top < window.innerHeight - 64;
   }
 
   function focusNavigatorItem(item) {
@@ -4509,9 +4397,7 @@ ${body}
     textarea.select();
     const copied = document.execCommand("copy");
     textarea.remove();
-    if (!copied && clipboardError) {
-      throw clipboardError;
-    }
+    if (!copied) throw clipboardError || new Error("Clipboard copy failed.");
   }
 
   function renderNavigatorPanel() {
@@ -4669,7 +4555,6 @@ ${body}
       root.querySelector(".lcgs-tool-trigger")?.setAttribute("aria-expanded", "false");
       return;
     }
-    if (root.dataset.open === "true") renderNavigatorPanel();
   }
 
   function notesStorageKey() {
@@ -4784,7 +4669,7 @@ ${body}
   }
 
   function getMessageNoteTargets() {
-    return Array.from(document.querySelectorAll("main section[data-turn], main [data-message-author-role]"))
+    return Array.from(document.querySelectorAll("main#main #thread section[data-turn], main#main #thread [data-message-author-role]"))
       .filter((node) => {
         if (node.closest(`#${NOTES_ID}`)) return false;
         if (node.matches("[data-message-author-role]") && node.closest("section[data-turn]")) return false;
@@ -4800,6 +4685,7 @@ ${body}
       return;
     }
 
+    let added = false;
     getMessageNoteTargets().forEach((node) => {
       if (node.querySelector(`:scope > .${MESSAGE_NOTE_BUTTON_CLASS}`)) return;
       const button = document.createElement("button");
@@ -4814,8 +4700,9 @@ ${body}
         openMessageNote(node);
       });
       node.appendChild(button);
+      added = true;
     });
-    updateMessageNoteStates();
+    if (added) updateMessageNoteStates();
   }
 
   function updateMessageNoteStates() {
@@ -4862,14 +4749,32 @@ ${body}
     root.classList.remove("lcgs-reading-mode-active", "lcgs-print-mode-active");
     root.classList.toggle("lcgs-compact-sidebar-active", enabled && Boolean(settings.compactSidebar));
     root.classList.toggle("lcgs-local-notes-active", enabled && Boolean(settings.localNotes) && !settings.advancedSafeMode);
+    updateRouteClasses();
+  }
+
+  function updateRouteClasses() {
+    const root = document.documentElement;
+    root.classList.toggle("lcgs-view-library", location.pathname.startsWith("/library"));
+    root.classList.toggle("lcgs-view-scheduled", location.pathname.startsWith("/scheduled"));
+    root.classList.toggle("lcgs-view-plugins", location.pathname.startsWith("/plugins"));
+    root.classList.toggle("lcgs-view-project", /^\/g\/g-p-[^/]+\/project\/?$/.test(location.pathname));
+    const workRadio = Array.from(document.querySelectorAll('[role="radio"], input[type="radio"]'))
+      .find((radio) => /\bwork\b/i.test(`${radio.getAttribute("aria-label") || ""} ${radio.textContent || ""}`));
+    const workSelected = Boolean(workRadio && (workRadio.getAttribute("aria-checked") === "true" || workRadio.checked));
+    root.classList.toggle("lcgs-view-work", workSelected);
   }
 
   function updateImageViewerMode() {
-    const bodyText = document.body?.innerText || "";
-    const hasEditorPrompt = Boolean(document.querySelector('textarea[placeholder*="Describe edits"], [contenteditable="true"][aria-label*="Describe edits"]')) || bodyText.includes("Describe edits");
-    const hasImageToolbar = bodyText.includes("Aspect ratio") || bodyText.includes("Select");
-    const hasImageRail = document.querySelectorAll("main img").length >= 3;
-    document.documentElement.classList.toggle("lcgs-image-viewer-active", hasEditorPrompt && hasImageToolbar && hasImageRail);
+    document.querySelectorAll("[data-lcgs-image-viewer]").forEach((node) => node.removeAttribute("data-lcgs-image-viewer"));
+    const zoomButton = Array.from(document.querySelectorAll("button[aria-label]"))
+      .find((button) => /^Zoom level\b/i.test(button.getAttribute("aria-label") || ""));
+    const viewer = zoomButton?.closest('[role="dialog"]');
+    const hasImage = Boolean(viewer?.querySelector("img, canvas"));
+    const hasTools = Boolean(viewer && Array.from(viewer.querySelectorAll("button"))
+      .some((button) => /^(Comment|Remove BG|Erase|Resize)$/i.test(button.textContent?.trim() || button.getAttribute("aria-label") || "")));
+    const active = Boolean(viewer && hasImage && hasTools);
+    if (active) viewer.setAttribute("data-lcgs-image-viewer", "true");
+    document.documentElement.classList.toggle("lcgs-image-viewer-active", active);
   }
 
   function updateTableWrappers() {
@@ -4944,7 +4849,7 @@ ${body}
     });
   }
 
-  const reasoningDisclosureLabels = /^(Analyzed|Analysis|Reasoned|Reasoning|Thought|Thinking|Searched|Searching|Browsed|Browsing|Read|Ran|Used|Called|Edited|Wrote)\b/i;
+  const reasoningDisclosureLabels = /^(Analyzed|Analysis|Reasoned|Reasoning|Thought|Thinking|Searched|Searching|Browsed|Browsing)\b/i;
   const trustedReasoningActivation = new WeakMap();
   const userOpenedReasoningDisclosures = new WeakSet();
   const queuedReasoningDisclosureButtons = new Set();
@@ -4952,17 +4857,21 @@ ${body}
   let reasoningDisclosureScrollScanTimer = null;
 
   function isReasoningDisclosureGuardEnabled() {
-    return document.documentElement.dataset.localChatgptStyler === "on";
+    return document.documentElement.dataset.localChatgptStyler === "on"
+      && Boolean(activeSettings.reasoningGuard)
+      && !activeSettings.advancedSafeMode;
   }
 
   function getReasoningDisclosureButton(target) {
     const button = target?.closest?.("button");
-    if (!button || !document.querySelector("main#main")?.contains(button)) {
+    const assistantTurn = button?.closest?.("section[data-turn='assistant'], [data-message-author-role='assistant']");
+    if (!button || !assistantTurn || !document.querySelector("main#main")?.contains(button)) {
       return null;
     }
 
     const label = (button.querySelector("span.text-start")?.textContent || button.textContent || "").trim();
-    if (!reasoningDisclosureLabels.test(label) || !button.querySelector("svg")) {
+    const hasDisclosureState = button.hasAttribute("aria-expanded") || button.hasAttribute("data-state") || button.hasAttribute("aria-controls");
+    if (!reasoningDisclosureLabels.test(label) || !button.querySelector("svg") || !hasDisclosureState) {
       return null;
     }
 
@@ -5068,6 +4977,9 @@ ${body}
   function setReasoningDisclosurePanelsHidden(button, hidden) {
     getReasoningDisclosurePanels(button).forEach((panel) => {
       if (hidden) {
+        if (!Object.prototype.hasOwnProperty.call(panel.dataset, "lcgsReasoningOriginalDisplay")) {
+          panel.dataset.lcgsReasoningOriginalDisplay = panel.style.display || "";
+        }
         panel.dataset.lcgsReasoningAutoHidden = "true";
         panel.setAttribute("aria-hidden", "true");
         setImportantStyle(panel, "display", "none");
@@ -5075,7 +4987,10 @@ ${body}
       } else if (panel.dataset.lcgsReasoningAutoHidden === "true") {
         delete panel.dataset.lcgsReasoningAutoHidden;
         panel.removeAttribute("aria-hidden");
-        panel.style.removeProperty("display");
+        const originalDisplay = panel.dataset.lcgsReasoningOriginalDisplay || "";
+        if (originalDisplay) panel.style.display = originalDisplay;
+        else panel.style.removeProperty("display");
+        delete panel.dataset.lcgsReasoningOriginalDisplay;
       }
     });
     if (hidden) {
@@ -5095,7 +5010,10 @@ ${body}
     document.querySelectorAll("[data-lcgs-reasoning-auto-hidden]").forEach((panel) => {
       delete panel.dataset.lcgsReasoningAutoHidden;
       panel.removeAttribute("aria-hidden");
-      panel.style.removeProperty("display");
+      const originalDisplay = panel.dataset.lcgsReasoningOriginalDisplay || "";
+      if (originalDisplay) panel.style.display = originalDisplay;
+      else panel.style.removeProperty("display");
+      delete panel.dataset.lcgsReasoningOriginalDisplay;
     });
     document.querySelectorAll("[data-lcgs-reasoning-auto-collapsed]").forEach((button) => {
       delete button.dataset.lcgsReasoningAutoCollapsed;
@@ -5251,16 +5169,6 @@ ${body}
     }, true);
 
     queueReasoningDisclosureScan(document);
-    new MutationObserver((mutations) => {
-      if (!isReasoningDisclosureGuardEnabled()) {
-        restoreReasoningDisclosurePanels();
-        return;
-      }
-
-      mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach((node) => queueReasoningDisclosureScan(node));
-      });
-    }).observe(document.body, { childList: true, subtree: true });
     document.addEventListener("scroll", scheduleReasoningDisclosureScrollScan, { passive: true, capture: true });
   }
 
@@ -5368,8 +5276,60 @@ ${body}
     });
   }
 
+  function updateMessageActionControls() {
+    const selector = [
+      "button[data-testid='copy-turn-action-button']",
+      "button[data-testid='project-save-turn-action-button']",
+      "button[data-testid*='thumb' i]",
+      "button[data-testid*='regenerate' i]",
+      "button[data-testid*='retry' i]",
+      "button[aria-label='Copy response']",
+      "button[aria-label='Copy message']",
+      "button[aria-label='Edit message']",
+      "button[aria-label='Add to project sources']",
+      "button[aria-label='Switch model']",
+      "button[aria-label='More actions']",
+      "button[aria-label*='read aloud' i]",
+      "button[aria-label*='regenerate' i]",
+      "button[aria-label*='retry' i]",
+      "button[aria-label*='good response' i]",
+      "button[aria-label*='bad response' i]"
+    ].join(",");
+    const controls = new Set(document.querySelectorAll(`main section[data-turn] :is(${selector}), main [data-message-id] :is(${selector})`));
+
+    document.querySelectorAll(`main [${ACTION_CONTROL_ATTRIBUTE}]`).forEach((control) => {
+      if (!controls.has(control)) control.removeAttribute(ACTION_CONTROL_ATTRIBUTE);
+    });
+    controls.forEach((control) => {
+      if (control.getAttribute(ACTION_CONTROL_ATTRIBUTE) !== "icon") {
+        control.setAttribute(ACTION_CONTROL_ATTRIBUTE, "icon");
+      }
+    });
+  }
+
+  function updateChatDisclaimer() {
+    const expected = "ChatGPT can make mistakes. Check important info.";
+    const matches = Array.from(document.querySelectorAll("main#main div"))
+      .filter((node) => node.textContent?.trim() === expected)
+      .filter((node) => !Array.from(node.children).some((child) => child.textContent?.trim() === expected));
+    document.querySelectorAll("[data-lcgs-disclaimer]").forEach((node) => {
+      if (!matches.includes(node)) node.removeAttribute("data-lcgs-disclaimer");
+    });
+    matches.forEach((node) => node.setAttribute("data-lcgs-disclaimer", "true"));
+  }
+
+  function updateSplashHeading() {
+    const matches = Array.from(document.querySelectorAll("main#main h1"))
+      .filter((heading) => /^How can I help\b/i.test(heading.textContent?.trim() || ""));
+    document.querySelectorAll("[data-lcgs-splash-heading]").forEach((heading) => {
+      if (!matches.includes(heading)) heading.removeAttribute("data-lcgs-splash-heading");
+    });
+    matches.forEach((heading) => heading.setAttribute("data-lcgs-splash-heading", "true"));
+  }
+
   function updateDynamicPageModes() {
     dynamicPageModesScheduled = false;
+    updateRouteClasses();
     updateSidebarSectionLabels();
     updateSidebarProfileStatus();
     updateMemoryUpdateBlocks();
@@ -5377,6 +5337,9 @@ ${body}
     updateTableWrappers();
     updateInlineCitationPills();
     updateUserMessageBubbles();
+    updateMessageActionControls();
+    updateChatDisclaimer();
+    updateSplashHeading();
     updateCustomFavicon(activeSettings);
     updateNotesPanel(activeSettings);
     updatePromptToolkitVisibility();
@@ -5384,7 +5347,7 @@ ${body}
   }
 
   function updateSidebarSectionLabels() {
-    const labels = Array.from(document.querySelectorAll("#stage-slideover-sidebar .__menu-label[data-no-spacing], nav .__menu-label[data-no-spacing], aside .__menu-label[data-no-spacing]"));
+    const labels = Array.from(document.querySelectorAll("nav[aria-label='Chat history'] .__menu-label[data-no-spacing]"));
     labels.forEach((label, index) => {
       label.dataset.lcgsSidebarLabel = index === 0 ? "folders" : "loose-files";
     });
@@ -5407,7 +5370,18 @@ ${body}
   function scheduleDynamicPageModes() {
     if (dynamicPageModesScheduled) return;
     dynamicPageModesScheduled = true;
-    requestAnimationFrame(updateDynamicPageModes);
+    setTimeout(updateDynamicPageModes, 120);
+  }
+
+  function handlePageMutations(mutations) {
+    if (isReasoningDisclosureGuardEnabled()) {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => queueReasoningDisclosureScan(node));
+      });
+    } else {
+      restoreReasoningDisclosurePanels();
+    }
+    scheduleDynamicPageModes();
   }
 
   function apply(settings) {
@@ -5438,7 +5412,7 @@ ${body}
   installPromptToolkit();
   ensureExporter();
   updateDynamicPageModes();
-  new MutationObserver(scheduleDynamicPageModes).observe(document.body, { childList: true, subtree: true });
+  new MutationObserver(handlePageMutations).observe(document.body, { childList: true, subtree: true });
 
   safeAddStorageChangeListener((changes, areaName) => {
     if (areaName === "local" && changes[STORAGE_KEY]) {

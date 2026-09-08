@@ -30,7 +30,7 @@
 
         <label class="quick-tile span-2">
           <span>Brand mask</span>
-          <input id="brandMask" type="text" maxlength="32" placeholder="DesignerGPT">
+          <input id="brandMask" type="text" maxlength="32" placeholder="Optional name">
         </label>
 
         <label class="quick-tile color-tile">
@@ -79,12 +79,23 @@
           <span>Local notes</span>
           <input id="localNotes" type="checkbox">
         </label>
+
+        <label class="quick-tile toggle-tile span-2">
+          <span>Prompt tools</span>
+          <input id="promptTools" type="checkbox">
+        </label>
+
+        <label class="quick-tile toggle-tile span-2">
+          <span>Navigator</span>
+          <input id="messageNavigator" type="checkbox">
+        </label>
       </section>
 
       <footer class="popup-footer">
         <button id="reset" type="button">Reset</button>
         <a href="options.html" target="_blank">Settings</a>
       </footer>
+      <p id="popupStatus" class="popup-status" role="status" aria-live="polite"></p>
     </main>
     <script src="settings.js"></script>
     <script src="popup.js"></script>

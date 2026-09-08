@@ -44,6 +44,7 @@ const LCGS_DEFAULTS = {
   zenMode: false,
   localNotes: false,
   advancedSafeMode: false,
+  reasoningGuard: true,
   promptTools: false,
   promptSlashPalette: true,
   promptHistory: false,
@@ -421,15 +422,63 @@ const LCGS_READABILITY_PRESETS = {
   }
 };
 
+let lcgsSaveQueue = Promise.resolve();
+
+function lcgsStorageGet(keys) {
+  return new Promise((resolve, reject) => {
+    try {
+      chrome.storage.local.get(keys, (result) => {
+        const error = chrome.runtime?.lastError;
+        if (error) reject(new Error(error.message));
+        else resolve(result || {});
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+function lcgsStorageSet(values) {
+  return new Promise((resolve, reject) => {
+    try {
+      chrome.storage.local.set(values, () => {
+        const error = chrome.runtime?.lastError;
+        if (error) reject(new Error(error.message));
+        else resolve();
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+function lcgsStorageRemove(keys) {
+  return new Promise((resolve, reject) => {
+    try {
+      chrome.storage.local.remove(keys, () => {
+        const error = chrome.runtime?.lastError;
+        if (error) reject(new Error(error.message));
+        else resolve();
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
 function lcgsGetSettings() {
   if (!globalThis.chrome?.storage?.local) {
     const stored = localStorage.getItem(LCGS_STORAGE_KEY);
-    return Promise.resolve(lcgsNormalizeSettings({
-      ...LCGS_DEFAULTS,
-      ...(stored ? JSON.parse(stored) : {})
-    }));
+    try {
+      return Promise.resolve(lcgsNormalizeSettings({
+        ...LCGS_DEFAULTS,
+        ...(stored ? JSON.parse(stored) : {})
+      }));
+    } catch (error) {
+      return Promise.resolve(lcgsNormalizeSettings(LCGS_DEFAULTS));
+    }
   }
-  return chrome.storage.local.get(LCGS_STORAGE_KEY).then((result) => lcgsNormalizeSettings({
+  return lcgsStorageGet(LCGS_STORAGE_KEY).then((result) => lcgsNormalizeSettings({
     ...LCGS_DEFAULTS,
     ...(result[LCGS_STORAGE_KEY] || {})
   }));
@@ -441,9 +490,10 @@ function lcgsSaveSettings(settings) {
     localStorage.setItem(LCGS_STORAGE_KEY, JSON.stringify(normalized));
     return Promise.resolve();
   }
-  return chrome.storage.local.set({
-    [LCGS_STORAGE_KEY]: normalized
-  });
+  const write = () => lcgsStorageSet({ [LCGS_STORAGE_KEY]: normalized });
+  const next = lcgsSaveQueue.catch(() => {}).then(write);
+  lcgsSaveQueue = next;
+  return next;
 }
 
 function lcgsApplyThemePreset(settings, theme) {
@@ -464,6 +514,7 @@ function lcgsApplyThemePreset(settings, theme) {
     zenMode: normalized.zenMode,
     localNotes: normalized.localNotes,
     advancedSafeMode: normalized.advancedSafeMode,
+    reasoningGuard: normalized.reasoningGuard,
     promptTools: normalized.promptTools,
     promptSlashPalette: normalized.promptSlashPalette,
     promptHistory: normalized.promptHistory,
@@ -516,6 +567,12 @@ function lcgsExtractCustomSettings(settings) {
   return result;
 }
 
+function lcgsClampNumber(value, min, max, fallback) {
+  if (value === "" || value === null || value === undefined) return fallback;
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(min, Math.min(max, number)) : fallback;
+}
+
 function lcgsNormalizeSettings(settings) {
   const hasBackgroundImageName = Object.prototype.hasOwnProperty.call(settings || {}, "backgroundImageName");
   const hasBrandImageName = Object.prototype.hasOwnProperty.call(settings || {}, "brandImageName");
@@ -562,6 +619,7 @@ function lcgsNormalizeSettings(settings) {
       zenMode: normalized.zenMode,
       localNotes: normalized.localNotes,
       advancedSafeMode: normalized.advancedSafeMode,
+      reasoningGuard: normalized.reasoningGuard,
       promptTools: normalized.promptTools,
       promptSlashPalette: normalized.promptSlashPalette,
       promptHistory: normalized.promptHistory,
@@ -597,8 +655,17 @@ function lcgsNormalizeSettings(settings) {
   if (!normalized.brandImage && normalized.brandImageName === "icon128.png") {
     normalized.brandImageName = LCGS_DEFAULTS.brandImageName;
   }
-  normalized.promptHistoryMax = Math.max(5, Math.min(200, Number(normalized.promptHistoryMax) || LCGS_DEFAULTS.promptHistoryMax));
-  normalized.navigatorLimit = Math.max(20, Math.min(200, Number(normalized.navigatorLimit) || LCGS_DEFAULTS.navigatorLimit));
+  normalized.promptHistoryMax = lcgsClampNumber(normalized.promptHistoryMax, 5, 200, LCGS_DEFAULTS.promptHistoryMax);
+  normalized.navigatorLimit = lcgsClampNumber(normalized.navigatorLimit, 20, 200, LCGS_DEFAULTS.navigatorLimit);
+  normalized.fontSize = lcgsClampNumber(normalized.fontSize, 12, 28, LCGS_DEFAULTS.fontSize);
+  normalized.lineHeight = lcgsClampNumber(normalized.lineHeight, 1.2, 2.2, LCGS_DEFAULTS.lineHeight);
+  normalized.chatWidth = lcgsClampNumber(normalized.chatWidth, 600, 1800, LCGS_DEFAULTS.chatWidth);
+  normalized.pageRadius = lcgsClampNumber(normalized.pageRadius, 0, 28, LCGS_DEFAULTS.pageRadius);
+  normalized.backgroundOpacity = lcgsClampNumber(normalized.backgroundOpacity, 0, 0.9, LCGS_DEFAULTS.backgroundOpacity);
+  normalized.backgroundBlur = lcgsClampNumber(normalized.backgroundBlur, 0, 24, LCGS_DEFAULTS.backgroundBlur);
+  normalized.backgroundVignette = lcgsClampNumber(normalized.backgroundVignette, 0, 0.8, LCGS_DEFAULTS.backgroundVignette);
+  normalized.codeFontSize = lcgsClampNumber(normalized.codeFontSize, 11, 22, LCGS_DEFAULTS.codeFontSize);
+  normalized.codeRadius = lcgsClampNumber(normalized.codeRadius, 0, 24, LCGS_DEFAULTS.codeRadius);
   return normalized;
 }
 

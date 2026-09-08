@@ -11,12 +11,14 @@ const popupFields = [
   "chatWidth",
   "compactSidebar",
   "zenMode",
-  "localNotes"
+  "localNotes",
+  "promptTools",
+  "messageNavigator"
 ];
 
 let popupSettings = { ...LCGS_DEFAULTS };
 const popupReadabilityFieldIds = ["fontSize", "chatWidth"];
-const popupFunctionalFieldIds = ["enabled", "zenMode", "localNotes"];
+const popupFunctionalFieldIds = ["enabled", "zenMode", "localNotes", "promptTools", "messageNavigator"];
 
 function applyPopupSettings(settings) {
   popupSettings = lcgsNormalizeSettings(settings || LCGS_DEFAULTS);
@@ -124,4 +126,8 @@ async function initPopup() {
   }
 }
 
-initPopup();
+initPopup().catch((error) => {
+  applyPopupSettings(LCGS_DEFAULTS);
+  const status = document.getElementById("popupStatus");
+  if (status) status.textContent = error?.message || "Settings are temporarily unavailable.";
+});
