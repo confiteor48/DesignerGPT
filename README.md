@@ -32,6 +32,10 @@ The extension stores settings in browser extension storage and applies them dire
 
 ## Screenshots
 
+![DesignerGPT theme gallery](assets/screenshots/settings-theme.png)
+
+![DesignerGPT popup](assets/screenshots/popup.png)
+
 ![DesignerGPT advanced settings](assets/screenshots/settings-advanced.png)
 
 ## Installation
@@ -180,6 +184,10 @@ assets/ui-background.jpg   Popup and settings wallpaper
 ## Development Notes
 
 This is an unpacked browser extension. There is no build step required for normal development.
+
+The extension UI uses a compact shared stylesheet, separate from conversation typography. Settings use sidebar navigation on desktop and a tab bar on narrow screens. The popup declares an explicit intrinsic width for Chromium browser-action sizing.
+
+Set `PLAYWRIGHT_PATH` to an installed Playwright package and run `node tests/ui-smoke.cjs` for runtime/export checks. `node tests/visual-review.cjs` checks the desktop/mobile settings layouts and regenerates privacy-safe screenshots after a five-second settle.
 
 When editing JavaScript, reload the extension and refresh ChatGPT before testing. When editing `manifest.json`, icons, or web-accessible assets, reload the extension from the browser extensions page.
 

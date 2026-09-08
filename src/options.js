@@ -426,7 +426,9 @@ function renderThemeGallery() {
       button.type = "button";
       button.className = "theme-preview-card";
       button.dataset.themePreview = value;
-      button.style.setProperty("--theme-preview-bg", preset.backgroundMode === "solid" ? preset.backgroundColor : preset.backgroundGradient);
+      button.style.setProperty("--theme-preview-bg", preset.backgroundMode === "image"
+        ? 'url("../assets/theme-background.jpg") center / cover'
+        : preset.backgroundMode === "solid" ? preset.backgroundColor : preset.backgroundGradient);
       button.style.setProperty("--theme-preview-surface", preset.surfaceColor);
       button.style.setProperty("--theme-preview-text", preset.surfaceText);
       button.style.setProperty("--theme-preview-muted", preset.mutedText);

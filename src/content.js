@@ -1272,8 +1272,8 @@ main section div.agent-turn .markdown.prose {
   font-size: var(--lcgs-font-size) !important;
   line-height: var(--lcgs-line-height) !important;
   background: color-mix(in srgb, var(--lcgs-assistant-bg) 88%, transparent) !important;
-  border: 1px solid color-mix(in srgb, var(--lcgs-accent) 70%, var(--lcgs-border) 30%) !important;
-  border-radius: calc(var(--lcgs-radius) + 8px) calc(var(--lcgs-radius) + 8px) calc(var(--lcgs-radius) + 8px) 0 !important;
+  border: 1px solid color-mix(in srgb, var(--lcgs-border) 42%, transparent) !important;
+  border-radius: var(--lcgs-radius) !important;
   color: var(--lcgs-assistant-text) !important;
   padding: 22px 18px !important;
   width: fit-content !important;
@@ -1776,10 +1776,10 @@ main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search li
   background-color: color-mix(in srgb, var(--lcgs-surface) 82%, transparent) !important;
 }
 
-main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) :is(table, [role="table"], [role="grid"], [data-testid*="library"], [data-testid*="file-list"], [class*="library"]:has([role="row"])) {
+main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) :is(table, [role="table"], [role="grid"], [data-testid*="file-list"]) {
   background-color: color-mix(in srgb, var(--lcgs-surface) 90%, var(--lcgs-sidebar-bg) 10%) !important;
   border: 1px solid color-mix(in srgb, var(--lcgs-border) 48%, transparent) !important;
-  border-radius: calc(var(--lcgs-radius) + 8px) !important;
+  border-radius: 8px !important;
   color: var(--lcgs-text) !important;
   overflow: hidden !important;
 }
@@ -2889,6 +2889,73 @@ html:not(.lcgs-image-viewer-active) [data-testid="webpage-citation-pill"] a:hove
   background-color: color-mix(in srgb, var(--lcgs-accent) 20%, transparent) !important;
   border-color: color-mix(in srgb, var(--lcgs-accent) 58%, var(--lcgs-border) 42%) !important;
 }
+
+/* Keep tool typography independent of the selected conversation font. */
+:is(#${EXPORT_ID}, #${EXPORT_MODAL_ID}, #${NOTES_ID}, #${SLASH_PALETTE_ID}) {
+  --lcgs-surface: #26282c;
+  --lcgs-sidebar-bg: #1d1f22;
+  --lcgs-border: #51545c;
+  --lcgs-text: #f0f0f2;
+  --lcgs-muted: #a7abb4;
+  --lcgs-font-family: "Segoe UI", system-ui, sans-serif;
+  font: 400 13px/1.5 "Segoe UI", system-ui, sans-serif;
+}
+:is(#${EXPORT_ID}, #${EXPORT_MODAL_ID}, #${NOTES_ID}, #${SLASH_PALETTE_ID}) * { box-sizing: border-box; letter-spacing: 0; text-shadow: none; }
+#${EXPORT_ID} { gap: 4px; }
+#${EXPORT_ID} button, #${EXPORT_MODAL_ID} button, #${NOTES_ID} button {
+  font: 500 13px/1.4 "Segoe UI", system-ui, sans-serif !important;
+  border-radius: 6px !important; box-shadow: none !important;
+}
+#${EXPORT_ID} > button, #${EXPORT_ID} #${PROMPT_TOOLS_ID} .lcgs-tool-trigger, #${EXPORT_ID} #${NAVIGATOR_ID} .lcgs-tool-trigger, #page-header button[data-testid="share-chat-button"] {
+  height: 32px !important; min-height: 32px !important; padding: 0 10px !important;
+  border: 1px solid #ffffff25 !important; border-radius: 6px !important;
+  background: #202124e8 !important; color: #f0f0f2 !important;
+  font: 500 13px/1.4 "Segoe UI", system-ui, sans-serif !important; vertical-align: middle;
+}
+#${EXPORT_ID} .lcgs-export-menu, #${EXPORT_ID} .lcgs-tool-panel, #${NOTES_ID}, #${SLASH_PALETTE_ID} { border-radius: 8px; }
+#${EXPORT_ID} .lcgs-tool-panel header, #${NOTES_ID} header { padding: 12px 14px; background: #24262a; font: 600 13px/1.5 "Segoe UI", system-ui, sans-serif; }
+#${EXPORT_ID} .lcgs-tool-title { font-size: 14px; font-weight: 600; }
+#${EXPORT_ID} .lcgs-nav-list { display: block; padding: 6px; }
+#${EXPORT_ID} .lcgs-nav-row {
+  display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 10px;
+  height: auto; min-height: 58px; padding: 10px; margin: 0;
+  border: 0 !important; border-bottom: 1px solid #ffffff0b !important; border-radius: 0 !important; background: transparent !important;
+}
+#${EXPORT_ID} .lcgs-nav-row:hover { background: #ffffff09 !important; }
+#${EXPORT_ID} .lcgs-nav-main { display: grid; gap: 3px; }
+#${EXPORT_ID} .lcgs-nav-label { display: block; font-size: 12px; font-weight: 600; }
+#${EXPORT_ID} .lcgs-nav-text { display: block; font-size: 12px; font-weight: 400; margin: 0; }
+#${EXPORT_ID} .lcgs-nav-index { min-width: 28px; min-height: 28px; border-radius: 5px; background: #ffffff0b; color: #b8bcc4; font: 500 10px/1.3 "Segoe UI", sans-serif; }
+#${EXPORT_ID} .lcgs-nav-tag { border: 0; padding: 0; background: transparent; font-size: 11px; }
+#${EXPORT_ID} .lcgs-nav-stats { gap: 6px 12px; }
+#${EXPORT_ID} .lcgs-nav-scope { border: 0; border-radius: 5px !important; font-size: 12px !important; }
+#${EXPORT_ID} .lcgs-nav-scope[aria-pressed="true"] { background: #ffffff1a !important; }
+#${EXPORT_ID} :is(input, textarea)::placeholder { color: #858a95; }
+#${EXPORT_ID} :is(input, textarea) { font-weight: 400 !important; }
+#${PROMPT_TOOLS_ID} .lcgs-tool-panel { grid-template-rows: auto auto auto auto minmax(0, 1fr); }
+#${PROMPT_TOOLS_ID} .lcgs-prompt-history-tools { gap: 10px; padding: 12px; }
+#${PROMPT_TOOLS_ID} .lcgs-history-list { max-height: 100px; }
+#${PROMPT_TOOLS_ID} :is(.lcgs-snippet-list, .lcgs-history-list) { min-width: 0; min-height: 0; overflow-x: hidden; padding: 6px; }
+#${PROMPT_TOOLS_ID} :is(.lcgs-snippet-row, .lcgs-history-row) { grid-template-columns: minmax(0, 1fr) auto; min-width: 0; padding: 10px 6px; border: 0; border-bottom: 1px solid #ffffff0b; border-radius: 0; background: transparent; }
+#${PROMPT_TOOLS_ID} .lcgs-snippet-main { display: grid; min-width: 0; gap: 4px; overflow: hidden; }
+#${PROMPT_TOOLS_ID} :is(.lcgs-snippet-name, .lcgs-snippet-text) { display: block; min-width: 0; font-size: 12px; }
+#${PROMPT_TOOLS_ID} .lcgs-snippet-name { font-weight: 600; }
+#${PROMPT_TOOLS_ID} .lcgs-snippet-text { font-weight: 400; }
+#${PROMPT_TOOLS_ID} .lcgs-muted-line { font-size: 12px; font-weight: 400; }
+#${EXPORT_MODAL_ID} .lcgs-toggle-row { border: 0; border-bottom: 1px solid #ffffff0b; border-radius: 0; background: transparent; padding: 8px 0; font-weight: 400; }
+#${EXPORT_MODAL_ID} .lcgs-toggle-row input:checked { background: #6b9b87; border-color: #6b9b87; }
+#${EXPORT_MODAL_ID} h3 { text-transform: none; font-weight: 600; font-size: 13px; }
+#${EXPORT_MODAL_ID} label { font-weight: 400; }
+#${EXPORT_MODAL_ID} h2 { font: 600 17px/1.4 "Segoe UI", sans-serif; }
+#${EXPORT_MODAL_ID} .lcgs-panel { padding: 0 8px; }
+#${EXPORT_MODAL_ID} .lcgs-primary { background: #e6bac8 !important; border-color: #e6bac8 !important; color: #242027 !important; }
+#${NOTES_ID}[data-collapsed="true"] { width: 240px; }
+#${NOTES_ID}[data-collapsed="true"] :is([data-notes-conversation], [data-notes-clear]) { display: none; }
+#${NOTES_ID} textarea { font: 400 13px/1.6 "Segoe UI", system-ui, sans-serif !important; background: #1d1f22 !important; }
+#${NOTES_ID} .lcgs-notes-title { font-weight: 500; }
+#${NOTES_ID} button { height: 28px; min-height: 28px; }
+#${SLASH_PALETTE_ID} { top: auto; right: auto; }
+:is(#${EXPORT_ID}, #${EXPORT_MODAL_ID}, #${NOTES_ID}) :is(button, input, textarea):focus-visible { outline: 2px solid #e6bac8 !important; outline-offset: 2px; }
 
 @media (max-width: 760px) {
   #${EXPORT_MODAL_ID} .lcgs-modal-body {
@@ -4142,7 +4209,7 @@ ${body}
           <button type="button" class="lcgs-primary-action" data-snippet-save>Save snippet</button>
         </div>
         <div class="lcgs-prompt-history-tools">
-          <span class="lcgs-muted-line">Prompt history: Ctrl/Cmd + Up/Down in the composer</span>
+          <span class="lcgs-muted-line">Prompt history</span>
           <span class="lcgs-muted-line" data-history-count>0 saved</span>
           <input class="lcgs-history-search" data-history-search placeholder="Search prompt history">
         </div>
@@ -5262,7 +5329,7 @@ ${body}
   }
 
   function updateUserMessageBubbles() {
-    const outlineColor = "color-mix(in srgb, var(--lcgs-border) 62%, var(--lcgs-accent) 38%)";
+    const outlineColor = "color-mix(in srgb, var(--lcgs-border) 45%, transparent)";
     const userMediaRadius = "var(--lcgs-radius) var(--lcgs-radius) 0 var(--lcgs-radius)";
 
     document.querySelectorAll(".user-message-bubble-color").forEach((bubble) => {

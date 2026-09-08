@@ -89,6 +89,22 @@ async function createRouteFixture(pathname, markup) {
   assert.strictEqual(await page.locator("[data-testid='copy-turn-action-button']").getAttribute("data-lcgs-action-control"), "icon", "known message action should be marked");
   assert.strictEqual(await page.locator("[data-lcgs-disclaimer='true']").isVisible(), false, "disclaimer should be hidden");
 
+  await page.getByRole("button", { name: "Prompt", exact: true }).click();
+  await page.waitForTimeout(200);
+  assert.ok(await page.locator(".lcgs-snippet-list").evaluate((node) => node.scrollWidth <= node.clientWidth), "prompt snippets must not overflow horizontally");
+  for (const row of await page.locator(".lcgs-snippet-row").all()) {
+    assert.ok(await row.evaluate((node) => {
+      const text = node.querySelector(".lcgs-snippet-main").getBoundingClientRect();
+      const actions = node.querySelector(".lcgs-snippet-actions").getBoundingClientRect();
+      return text.right <= actions.left;
+    }), "snippet text must not overlap actions");
+  }
+  if (process.env.UI_PROMPT_SCREENSHOT) {
+    await page.waitForTimeout(5000);
+    await page.locator("#local-chatgpt-styler-prompt-tools .lcgs-tool-panel").screenshot({ path: process.env.UI_PROMPT_SCREENSHOT });
+  }
+  await page.getByRole("button", { name: "Close prompt tools" }).click();
+
   await page.getByRole("button", { name: "Nav" }).click();
   assert.strictEqual(await page.locator("#local-chatgpt-styler-navigator").getAttribute("data-open"), "true", "navigator should open");
   assert.strictEqual(await page.locator("[data-testid='thread-header-right-actions']").evaluate((node) => getComputedStyle(node).overflowX), "visible", "header wrappers must not clip DesignerGPT panels");
@@ -99,6 +115,10 @@ async function createRouteFixture(pathname, markup) {
   }), true, "navigator panel must be reachable outside the header bounds");
   assert.strictEqual(await page.locator("#local-chatgpt-styler-navigator .lcgs-nav-list").evaluate((list) => list.scrollWidth <= list.clientWidth), true, "navigator list must not scroll horizontally");
   assert.match(await page.locator(".lcgs-nav-stats").innerText(), /9 files/, "navigator should count each attachment");
+  if (process.env.UI_NAV_SCREENSHOT) {
+    await page.waitForTimeout(5000);
+    await page.locator("#local-chatgpt-styler-navigator .lcgs-tool-panel").screenshot({ path: process.env.UI_NAV_SCREENSHOT });
+  }
   await page.locator(".lcgs-nav-row").nth(1).click();
   assert.strictEqual(await page.locator("#local-chatgpt-styler-navigator").getAttribute("data-open"), "false", "navigator should close after a jump");
 

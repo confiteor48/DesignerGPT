@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "DesignerGPT",
   "description": "Local-only themes, workspace controls, notes, navigation, and conversation export for ChatGPT.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "icons": {
     "16": "assets/icon16.png",
     "32": "assets/icon32.png",
