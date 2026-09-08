@@ -97,6 +97,7 @@ async function createRouteFixture(pathname, markup) {
     const hit = document.elementFromPoint(rect.left + Math.min(20, rect.width / 2), rect.top + Math.min(20, rect.height / 2));
     return Boolean(hit && panel.contains(hit));
   }), true, "navigator panel must be reachable outside the header bounds");
+  assert.strictEqual(await page.locator("#local-chatgpt-styler-navigator .lcgs-nav-list").evaluate((list) => list.scrollWidth <= list.clientWidth), true, "navigator list must not scroll horizontally");
   assert.match(await page.locator(".lcgs-nav-stats").innerText(), /9 files/, "navigator should count each attachment");
   await page.locator(".lcgs-nav-row").nth(1).click();
   assert.strictEqual(await page.locator("#local-chatgpt-styler-navigator").getAttribute("data-open"), "false", "navigator should close after a jump");
@@ -188,6 +189,14 @@ async function createRouteFixture(pathname, markup) {
   assert.strictEqual(await lateToolbar.evaluate((node) => node.nextElementSibling?.getAttribute("data-testid")), "share-chat-button", "late toolbar should mount before Share");
   assert.strictEqual(await lateConversation.getByRole("button", { name: "Prompt", exact: true }).isVisible(), true, "Prompt should appear after SPA navigation");
   assert.strictEqual(await lateConversation.getByRole("button", { name: "Nav", exact: true }).isVisible(), true, "Nav should appear after SPA navigation");
+  await lateConversation.evaluate(() => {
+    document.querySelector("#page-header").outerHTML = '<header id="page-header"><div><button data-testid="share-chat-button">Share</button></div></header>';
+  });
+  await lateConversation.waitForTimeout(300);
+  assert.strictEqual(await lateConversation.locator("#local-chatgpt-styler-export").count(), 1, "toolbar should survive a replaced SPA header without duplication");
+  assert.strictEqual(await lateConversation.getByRole("button", { name: "Download", exact: true }).isVisible(), true, "toolbar should reattach after its header is replaced");
+  assert.strictEqual(await lateConversation.getByRole("button", { name: "Prompt", exact: true }).isVisible(), true, "Prompt should survive a replaced SPA header");
+  assert.strictEqual(await lateConversation.getByRole("button", { name: "Nav", exact: true }).isVisible(), true, "Nav should survive a replaced SPA header");
   await lateConversation.close();
 
   const work = await browser.newPage({ viewport: { width: 1440, height: 900 } });

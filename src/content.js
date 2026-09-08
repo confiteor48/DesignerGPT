@@ -20,6 +20,7 @@
   let defaultBackgroundUrl = "";
   let defaultBackgroundLoad = null;
   let activeSettings = null;
+  let exporterRoot = null;
 
   const defaults = {
     enabled: true,
@@ -2354,6 +2355,12 @@ main#main [data-lcgs-disclaimer="true"] {
   overflow: auto;
 }
 
+#${NAVIGATOR_ID} .lcgs-nav-list {
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
 #${PROMPT_TOOLS_ID} .lcgs-snippet-row,
 #${PROMPT_TOOLS_ID} .lcgs-history-row,
 #${NAVIGATOR_ID} .lcgs-nav-row,
@@ -2375,10 +2382,21 @@ main#main [data-lcgs-disclaimer="true"] {
   text-align: left;
 }
 
+#${NAVIGATOR_ID} .lcgs-nav-row {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
 #${PROMPT_TOOLS_ID} .lcgs-snippet-main,
 #${NAVIGATOR_ID} .lcgs-nav-main,
 #${SLASH_PALETTE_ID} .lcgs-slash-main {
   min-width: 0;
+}
+
+#${NAVIGATOR_ID} .lcgs-nav-main {
+  overflow: hidden;
 }
 
 #${PROMPT_TOOLS_ID} .lcgs-snippet-name,
@@ -3715,9 +3733,18 @@ ${body}
   }
 
   function ensureExporter() {
-    if (document.getElementById(EXPORT_ID)) return;
+    const connectedRoot = document.getElementById(EXPORT_ID);
+    if (connectedRoot) {
+      exporterRoot = connectedRoot;
+      return connectedRoot;
+    }
+    if (exporterRoot) {
+      document.body.appendChild(exporterRoot);
+      return exporterRoot;
+    }
 
     const root = document.createElement("div");
+    exporterRoot = root;
     root.id = EXPORT_ID;
     root.innerHTML = `
       <button type="button" class="lcgs-export-trigger" aria-haspopup="true" aria-expanded="false">
@@ -3756,7 +3783,7 @@ ${body}
       }
     });
 
-    updateExporterVisibility();
+    return root;
   }
 
   function getHeaderActionAnchor() {
@@ -3789,8 +3816,7 @@ ${body}
   }
 
   function updateExporterVisibility() {
-    const root = document.getElementById(EXPORT_ID);
-    if (!root) return;
+    const root = ensureExporter();
     const enabled = document.documentElement.dataset.localChatgptStyler === "on";
     const zenMode = document.documentElement.classList.contains("lcgs-zen-mode-active");
     const hasConversation = hasExportableConversation();
