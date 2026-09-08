@@ -442,7 +442,9 @@ output {
 }
 
 .popup-body {
-  min-width: min(456px, 100vw);
+  width: 456px;
+  min-width: 456px;
+  max-width: 456px;
   min-height: 0;
   max-height: 600px;
   overflow-x: hidden;
@@ -454,7 +456,7 @@ output {
 }
 
 .popup {
-  width: min(440px, calc(100vw - 16px));
+  width: 440px;
   margin: 0 auto;
   padding: 12px;
   overflow: hidden;

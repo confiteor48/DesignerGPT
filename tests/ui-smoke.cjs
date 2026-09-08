@@ -255,17 +255,17 @@ async function createRouteFixture(pathname, markup) {
   const popupLayout = await popup.evaluate(() => ({
     height: document.documentElement.scrollHeight,
     viewport: innerHeight,
+    bodyWidth: document.body.getBoundingClientRect().width,
     promptTools: Boolean(document.querySelector("#promptTools")),
     navigator: Boolean(document.querySelector("#messageNavigator"))
   }));
   assert.ok(popupLayout.height <= popupLayout.viewport, "popup must not scroll");
+  assert.strictEqual(popupLayout.bodyWidth, 456, "popup must declare a stable intrinsic browser-action width");
   assert.strictEqual(popupLayout.promptTools, true, "popup should expose Prompt tools");
   assert.strictEqual(popupLayout.navigator, true, "popup should expose Navigator");
   await popup.locator("#promptTools").check();
   await popup.locator("#messageNavigator").check();
   assert.ok(await popup.evaluate(() => window.__writes.some((entry) => entry.localChatgptStylerSettings?.promptTools && entry.localChatgptStylerSettings?.messageNavigator)), "popup toggles should persist");
-  await popup.setViewportSize({ width: 400, height: 500 });
-  assert.ok(await popup.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "popup must not overflow horizontally when narrow");
 
   const optionsPage = await browser.newPage({ viewport: { width: 1100, height: 760 } });
   await optionsPage.addInitScript(() => {
