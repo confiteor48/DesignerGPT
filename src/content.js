@@ -540,6 +540,15 @@
       return "";
     }
 
+    const overlay = ':is(html, #main) :is(dialog, [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [role="tooltip"], .popover):not(.lcgs-modal, .lcgs-tool-panel, [data-lcgs-image-viewer="true"], [data-lcgs-image-viewer="true"] *)';
+    const luminance = (color) => {
+      const hex = String(color).replace(/^#([a-f\d])([a-f\d])([a-f\d])$/i, "#$1$1$2$2$3$3");
+      if (!/^#[a-f\d]{6}$/i.test(hex)) return 0;
+      return [1, 3, 5].map((offset) => parseInt(hex.slice(offset, offset + 2), 16) / 255)
+        .map((channel) => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4)
+        .reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
+    };
+
     return `
 :root {
   color-scheme: dark;
@@ -2054,6 +2063,7 @@ nav a {
 }
 
 a[href="/codex"],
+nav[aria-label="Chat history"] a:is([href="/images"], [href^="/images?"], [href^="/images/"]),
 a[data-testid="apps-button"],
 button[aria-label="Download apps"],
 button[class="group __menu-item hoverable gap-1.5 w-full"],
@@ -2960,6 +2970,89 @@ html:not(.lcgs-image-viewer-active) [data-testid="webpage-citation-pill"] a:hove
 #${NOTES_ID} button { height: 28px; min-height: 28px; }
 #${SLASH_PALETTE_ID} { top: auto; right: auto; }
 :is(#${EXPORT_ID}, #${EXPORT_MODAL_ID}, #${NOTES_ID}) :is(button, input, textarea):focus-visible { outline: 2px solid #e6bac8 !important; outline-offset: 2px; }
+
+/* Portalled surfaces must not inherit the transparent chat-canvas tokens. */
+${overlay} {
+  color-scheme: ${luminance(settings.surfaceColor) > 0.179 ? "light" : "dark"};
+  --lcgs-overlay-raised: color-mix(in srgb, var(--lcgs-surface) 94%, var(--lcgs-text) 6%);
+  --lcgs-overlay-hover: color-mix(in srgb, var(--lcgs-surface) 87%, var(--lcgs-text) 13%);
+  --lcgs-overlay-selected: color-mix(in srgb, var(--lcgs-surface) 78%, var(--lcgs-accent) 22%);
+  --lcgs-on-accent: ${luminance(settings.accentColor) > 0.179 ? "#17181b" : "#ffffff"};
+  --bg-primary: var(--lcgs-surface) !important;
+  --bg-secondary: var(--lcgs-overlay-raised) !important;
+  --bg-tertiary: var(--lcgs-overlay-hover) !important;
+  --bg-elevated-primary: var(--lcgs-surface) !important;
+  --bg-elevated-secondary: var(--lcgs-surface) !important;
+  --bg-control: var(--lcgs-overlay-hover) !important;
+  --accent-blue: var(--lcgs-accent) !important;
+  --main-surface-background: var(--lcgs-surface) !important;
+  --main-surface-primary: var(--lcgs-surface) !important;
+  --main-surface-secondary: var(--lcgs-overlay-raised) !important;
+  --main-surface-tertiary: var(--lcgs-overlay-hover) !important;
+  --surface-primary: var(--lcgs-surface) !important;
+  --surface-secondary: var(--lcgs-overlay-raised) !important;
+  --surface-tertiary: var(--lcgs-overlay-hover) !important;
+  --text-primary: var(--lcgs-text) !important;
+  --text-secondary: var(--lcgs-muted) !important;
+  --text-tertiary: var(--lcgs-muted) !important;
+  --text-placeholder: var(--lcgs-muted) !important;
+  --border-default: var(--lcgs-border) !important;
+  --border-light: color-mix(in srgb, var(--lcgs-surface) 60%, var(--lcgs-border) 40%) !important;
+  --border-medium: var(--lcgs-border) !important;
+  background-color: var(--lcgs-surface) !important;
+  background-image: none !important;
+  color: var(--lcgs-text) !important;
+  border-color: var(--lcgs-border) !important;
+  box-shadow: 0 16px 48px #00000040 !important;
+  backdrop-filter: none !important;
+}
+${overlay} :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), textarea, select, [role="combobox"], .btn-secondary) {
+  background-color: var(--lcgs-overlay-raised) !important;
+  color: var(--lcgs-text) !important;
+  border-color: var(--lcgs-border) !important;
+}
+${overlay} :is(input, textarea)::placeholder { color: var(--lcgs-muted) !important; }
+${overlay} :is([role="combobox"], .btn-secondary):hover:not(:disabled):not([aria-disabled="true"]) {
+  background-color: var(--lcgs-overlay-hover) !important;
+}
+${overlay} :is([role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="tab"], .__menu-item):is(:hover, [data-highlighted]):not([aria-disabled="true"]):not([data-disabled]):not(:disabled) {
+  background-color: var(--lcgs-overlay-hover) !important;
+  color: var(--lcgs-text) !important;
+}
+${overlay} :is([role="option"], [role="tab"], [role="radio"], [role="menuitemradio"], [role="menuitemcheckbox"]):is([aria-selected="true"], [aria-checked="true"]) {
+  background-color: var(--lcgs-overlay-selected) !important;
+  color: var(--lcgs-text) !important;
+}
+${overlay} :is([role="switch"], [role="checkbox"]) {
+  background-color: var(--lcgs-overlay-hover) !important;
+  border-color: var(--lcgs-border) !important;
+}
+${overlay} :is([role="switch"], [role="checkbox"])[aria-checked="true"],
+${overlay} :is(.btn-primary:not(.btn-danger), .btn-blue) {
+  background-color: var(--lcgs-accent) !important;
+  color: var(--lcgs-on-accent) !important;
+  border-color: var(--lcgs-accent) !important;
+}
+${overlay} [role="switch"] > span[data-state] { background-color: #fff !important; }
+${overlay} input:is([type="checkbox"], [type="radio"], [type="range"]) { accent-color: var(--lcgs-accent); }
+${overlay} :is(button, input, textarea, select, a, [tabindex]):focus-visible {
+  outline: 2px solid var(--lcgs-accent) !important;
+  outline-offset: 2px !important;
+}
+${overlay} :is(button, input, select, textarea, [role="option"], [role="menuitem"]):is(:disabled, [aria-disabled="true"], [data-disabled]) {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+${overlay} [data-testid$="-pricing-modal-column"] {
+  background-color: var(--lcgs-overlay-raised) !important;
+  background-image: none !important;
+  border-color: var(--lcgs-border) !important;
+}
+${overlay} [data-testid="pro-pricing-modal-column"] {
+  background-color: var(--lcgs-overlay-selected) !important;
+  outline-color: var(--lcgs-accent) !important;
+}
+${overlay} [data-testid$="-pricing-modal-column-top-half"] { background-color: transparent !important; }
 
 @media (max-width: 760px) {
   #${EXPORT_MODAL_ID} .lcgs-modal-body {
