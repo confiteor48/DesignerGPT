@@ -540,7 +540,7 @@
       return "";
     }
 
-    const overlay = ':is(html, #main) :is(dialog, [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [role="tooltip"], .popover):not(.lcgs-modal, .lcgs-tool-panel, [data-lcgs-image-viewer="true"], [data-lcgs-image-viewer="true"] *)';
+    const overlay = ':is(html, #main) :is(dialog:not(:has(> :is([role="dialog"], [role="alertdialog"], .popover))), [role="dialog"]:not(:has(> .popover)), [role="alertdialog"]:not(:has(> .popover)), [role="menu"], [role="listbox"], [role="tooltip"], .popover):not(.lcgs-modal, .lcgs-tool-panel, [data-lcgs-image-viewer="true"], [data-lcgs-image-viewer="true"] *)';
     const luminance = (color) => {
       const hex = String(color).replace(/^#([a-f\d])([a-f\d])([a-f\d])$/i, "#$1$1$2$2$3$3");
       if (!/^#[a-f\d]{6}$/i.test(hex)) return 0;
@@ -1750,6 +1750,46 @@ html.lcgs-view-project main#main #thread {
   box-shadow: none !important;
 }
 
+html.lcgs-view-profile main#main {
+  --profile-usage-level-0: color-mix(in srgb, var(--lcgs-surface) 90%, var(--lcgs-text) 10%);
+  --profile-usage-level-1: color-mix(in srgb, var(--lcgs-surface) 72%, var(--lcgs-accent) 28%);
+  --profile-usage-level-2: color-mix(in srgb, var(--lcgs-surface) 52%, var(--lcgs-accent) 48%);
+  --profile-usage-level-3: color-mix(in srgb, var(--lcgs-surface) 28%, var(--lcgs-accent) 72%);
+  --profile-usage-level-4: var(--lcgs-accent);
+  background-color: var(--lcgs-surface) !important;
+  color: var(--lcgs-text) !important;
+}
+
+html.lcgs-view-profile main#main > .bg-token-main-surface-primary {
+  background-color: var(--lcgs-surface) !important;
+}
+
+html.lcgs-view-profile main#main section {
+  background-color: color-mix(in srgb, var(--lcgs-surface) 94%, var(--lcgs-text) 6%) !important;
+  border-color: var(--lcgs-border) !important;
+}
+
+html.lcgs-view-profile main#main :is(button[aria-pressed], [role="radio"]) {
+  min-height: 32px;
+  padding-inline: 10px;
+  border-radius: 6px;
+  color: var(--lcgs-muted) !important;
+}
+
+html.lcgs-view-profile main#main :is(button[aria-pressed="true"], [role="radio"][aria-checked="true"]) {
+  background-color: color-mix(in srgb, var(--lcgs-surface) 72%, var(--lcgs-accent) 28%) !important;
+  color: var(--lcgs-text) !important;
+}
+
+html.lcgs-view-profile main#main :is(button[aria-pressed], [role="radio"]):focus-visible {
+  outline: 2px solid var(--lcgs-accent) !important;
+  outline-offset: 2px !important;
+}
+
+html.lcgs-view-profile main#main :is(dl > div, [role="list"] > *) {
+  border-bottom-color: color-mix(in srgb, var(--lcgs-border) 62%, transparent) !important;
+}
+
 main#main:has(:is(#artifacts-library-search-input, input[placeholder*="Search library"])) :is([role="tablist"], nav:has([role="tab"]), div:has(> [role="tab"])) {
   background: transparent !important;
   border-color: transparent !important;
@@ -1925,14 +1965,13 @@ svg {
 html.lcgs-custom-logo-active #sidebar-header a[href="/"],
 html.lcgs-custom-logo-active #sidebar-header a[data-sidebar-item="true"][href="/"],
 html.lcgs-custom-logo-active #sidebar-header :is(a, button):has(> .header-wordmark),
-html.lcgs-custom-logo-active #stage-sidebar-tiny-bar button:not(.__menu-item) {
+html.lcgs-custom-logo-active #stage-sidebar-tiny-bar button[aria-controls="stage-slideover-sidebar"] {
   position: relative !important;
 }
 
 html.lcgs-custom-logo-active:not(.lcgs-custom-brand-active) #sidebar-header a[href="/"],
 html.lcgs-custom-logo-active:not(.lcgs-custom-brand-active) #sidebar-header a[data-sidebar-item="true"][href="/"],
-html.lcgs-custom-logo-active:not(.lcgs-custom-brand-active) #sidebar-header :is(a, button):has(> .header-wordmark),
-html.lcgs-custom-logo-active:not(.lcgs-custom-brand-active) #stage-sidebar-tiny-bar button:not(.__menu-item) {
+html.lcgs-custom-logo-active:not(.lcgs-custom-brand-active) #sidebar-header :is(a, button):has(> .header-wordmark) {
   position: relative !important;
   display: flex !important;
   align-items: center !important;
@@ -1944,7 +1983,7 @@ html.lcgs-custom-logo-active:not(.lcgs-custom-brand-active) #stage-sidebar-tiny-
 html.lcgs-custom-logo-active:not(.lcgs-custom-brand-active) #sidebar-header a[href="/"] > *,
 html.lcgs-custom-logo-active:not(.lcgs-custom-brand-active) #sidebar-header a[data-sidebar-item="true"][href="/"] > *,
 html.lcgs-custom-logo-active:not(.lcgs-custom-brand-active) #sidebar-header :is(a, button):has(> .header-wordmark) > *,
-html.lcgs-custom-logo-active:not(.lcgs-custom-brand-active) #stage-sidebar-tiny-bar button:not(.__menu-item) > * {
+html.lcgs-custom-logo-active #stage-sidebar-tiny-bar button[aria-controls="stage-slideover-sidebar"] > * {
   opacity: 1 !important;
   visibility: visible !important;
 }
@@ -1952,7 +1991,7 @@ html.lcgs-custom-logo-active:not(.lcgs-custom-brand-active) #stage-sidebar-tiny-
 html.lcgs-custom-logo-active:not(.lcgs-custom-brand-active) #sidebar-header a[href="/"] svg,
 html.lcgs-custom-logo-active:not(.lcgs-custom-brand-active) #sidebar-header a[data-sidebar-item="true"][href="/"] svg,
 html.lcgs-custom-logo-active:not(.lcgs-custom-brand-active) #sidebar-header :is(a, button):has(> .header-wordmark) svg,
-html.lcgs-custom-logo-active:not(.lcgs-custom-brand-active) #stage-sidebar-tiny-bar button:not(.__menu-item) svg {
+html.lcgs-custom-logo-active #stage-sidebar-tiny-bar button[aria-controls="stage-slideover-sidebar"] .grid > svg:first-child {
   opacity: 0 !important;
   visibility: hidden !important;
 }
@@ -1960,7 +1999,7 @@ html.lcgs-custom-logo-active:not(.lcgs-custom-brand-active) #stage-sidebar-tiny-
 html.lcgs-custom-logo-active #sidebar-header a[href="/"]::before,
 html.lcgs-custom-logo-active #sidebar-header a[data-sidebar-item="true"][href="/"]::before,
 html.lcgs-custom-logo-active #sidebar-header :is(a, button):has(> .header-wordmark)::before,
-html.lcgs-custom-logo-active #stage-sidebar-tiny-bar button:not(.__menu-item)::before {
+html.lcgs-custom-logo-active #stage-sidebar-tiny-bar button[aria-controls="stage-slideover-sidebar"]::before {
   content: "" !important;
   position: absolute !important;
   inset: 0 !important;
@@ -1978,8 +2017,7 @@ html.lcgs-custom-logo-active #stage-sidebar-tiny-bar button:not(.__menu-item)::b
 
 html.lcgs-custom-logo-active:not(.lcgs-custom-brand-active) #sidebar-header a[href="/"]::before,
 html.lcgs-custom-logo-active:not(.lcgs-custom-brand-active) #sidebar-header a[data-sidebar-item="true"][href="/"]::before,
-html.lcgs-custom-logo-active:not(.lcgs-custom-brand-active) #sidebar-header :is(a, button):has(> .header-wordmark)::before,
-html.lcgs-custom-logo-active:not(.lcgs-custom-brand-active) #stage-sidebar-tiny-bar button:not(.__menu-item)::before {
+html.lcgs-custom-logo-active:not(.lcgs-custom-brand-active) #sidebar-header :is(a, button):has(> .header-wordmark)::before {
   inset: auto !important;
   top: 50% !important;
   left: 6px !important;
@@ -1989,6 +2027,21 @@ html.lcgs-custom-logo-active:not(.lcgs-custom-brand-active) #stage-sidebar-tiny-
   max-height: 22px !important;
   margin: 0 !important;
   transform: translateY(-50%) !important;
+}
+
+html.lcgs-custom-logo-active #stage-sidebar-tiny-bar button[aria-controls="stage-slideover-sidebar"]::before {
+  inset: 0 !important;
+  width: 22px !important;
+  height: 22px !important;
+  max-width: 22px !important;
+  max-height: 22px !important;
+  margin: auto !important;
+  transform: none !important;
+  transition: opacity 120ms ease !important;
+}
+
+html.lcgs-custom-logo-active #stage-sidebar-tiny-bar button[aria-controls="stage-slideover-sidebar"]:is(:hover, :focus-visible)::before {
+  opacity: 0 !important;
 }
 
 html.lcgs-custom-brand-active #stage-slideover-sidebar #sidebar-header,
@@ -2974,22 +3027,23 @@ html:not(.lcgs-image-viewer-active) [data-testid="webpage-citation-pill"] a:hove
 /* Portalled surfaces must not inherit the transparent chat-canvas tokens. */
 ${overlay} {
   color-scheme: ${luminance(settings.surfaceColor) > 0.179 ? "light" : "dark"};
-  --lcgs-overlay-raised: color-mix(in srgb, var(--lcgs-surface) 94%, var(--lcgs-text) 6%);
-  --lcgs-overlay-hover: color-mix(in srgb, var(--lcgs-surface) 87%, var(--lcgs-text) 13%);
+  --lcgs-overlay-panel: color-mix(in srgb, var(--lcgs-surface) 96%, var(--lcgs-text) 4%);
+  --lcgs-overlay-raised: color-mix(in srgb, var(--lcgs-surface) 88%, var(--lcgs-text) 12%);
+  --lcgs-overlay-hover: color-mix(in srgb, var(--lcgs-surface) 80%, var(--lcgs-text) 20%);
   --lcgs-overlay-selected: color-mix(in srgb, var(--lcgs-surface) 78%, var(--lcgs-accent) 22%);
   --lcgs-on-accent: ${luminance(settings.accentColor) > 0.179 ? "#17181b" : "#ffffff"};
-  --bg-primary: var(--lcgs-surface) !important;
+  --bg-primary: var(--lcgs-overlay-panel) !important;
   --bg-secondary: var(--lcgs-overlay-raised) !important;
   --bg-tertiary: var(--lcgs-overlay-hover) !important;
-  --bg-elevated-primary: var(--lcgs-surface) !important;
-  --bg-elevated-secondary: var(--lcgs-surface) !important;
+  --bg-elevated-primary: var(--lcgs-overlay-panel) !important;
+  --bg-elevated-secondary: var(--lcgs-overlay-panel) !important;
   --bg-control: var(--lcgs-overlay-hover) !important;
   --accent-blue: var(--lcgs-accent) !important;
-  --main-surface-background: var(--lcgs-surface) !important;
-  --main-surface-primary: var(--lcgs-surface) !important;
+  --main-surface-background: var(--lcgs-overlay-panel) !important;
+  --main-surface-primary: var(--lcgs-overlay-panel) !important;
   --main-surface-secondary: var(--lcgs-overlay-raised) !important;
   --main-surface-tertiary: var(--lcgs-overlay-hover) !important;
-  --surface-primary: var(--lcgs-surface) !important;
+  --surface-primary: var(--lcgs-overlay-panel) !important;
   --surface-secondary: var(--lcgs-overlay-raised) !important;
   --surface-tertiary: var(--lcgs-overlay-hover) !important;
   --text-primary: var(--lcgs-text) !important;
@@ -2999,12 +3053,21 @@ ${overlay} {
   --border-default: var(--lcgs-border) !important;
   --border-light: color-mix(in srgb, var(--lcgs-surface) 60%, var(--lcgs-border) 40%) !important;
   --border-medium: var(--lcgs-border) !important;
-  background-color: var(--lcgs-surface) !important;
+  background-color: var(--lcgs-overlay-panel) !important;
   background-image: none !important;
   color: var(--lcgs-text) !important;
   border-color: var(--lcgs-border) !important;
   box-shadow: 0 16px 48px #00000040 !important;
   backdrop-filter: none !important;
+}
+:is(dialog, [role="dialog"], [role="alertdialog"]):has(> :is([role="dialog"], [role="alertdialog"], .popover)) {
+  background-color: color-mix(in srgb, #000 56%, transparent) !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+}
+${overlay} > :is(header, footer) {
+  background-color: var(--lcgs-overlay-raised) !important;
+  border-color: var(--lcgs-border) !important;
 }
 ${overlay} :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), textarea, select, [role="combobox"], .btn-secondary) {
   background-color: var(--lcgs-overlay-raised) !important;
@@ -5141,6 +5204,7 @@ ${body}
     root.classList.toggle("lcgs-view-scheduled", location.pathname.startsWith("/scheduled"));
     root.classList.toggle("lcgs-view-plugins", location.pathname.startsWith("/plugins"));
     root.classList.toggle("lcgs-view-project", /^\/g\/g-p-[^/]+\/project\/?$/.test(location.pathname));
+    root.classList.toggle("lcgs-view-profile", /^\/profile\/?$/.test(location.pathname));
     const workRadio = Array.from(document.querySelectorAll('[role="radio"], input[type="radio"]'))
       .find((radio) => /\bwork\b/i.test(`${radio.getAttribute("aria-label") || ""} ${radio.textContent || ""}`));
     const workSelected = Boolean(workRadio && (workRadio.getAttribute("aria-checked") === "true" || workRadio.checked));

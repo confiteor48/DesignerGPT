@@ -99,6 +99,28 @@ async function createRouteFixture(pathname, markup) {
   assert.strictEqual(await page.locator("[data-testid='copy-turn-action-button']").getAttribute("data-lcgs-action-control"), "icon", "known message action should be marked");
   assert.strictEqual(await page.locator("[data-lcgs-disclaimer='true']").isVisible(), false, "disclaimer should be hidden");
 
+  await page.evaluate(() => {
+    const rail = document.createElement("nav");
+    rail.id = "stage-sidebar-tiny-bar";
+    rail.innerHTML = '<button aria-label="Open sidebar" aria-controls="stage-slideover-sidebar"><span class="grid"><svg data-icon="blossom"></svg><svg class="sidebar-expand" data-icon="sidebar"></svg></span></button><button aria-label="Open profile menu"><svg data-icon="profile"></svg></button>';
+    document.body.appendChild(rail);
+    window.postMessage({ type: "LCGS_APPLY_SETTINGS", settings: { enabled: true, theme: "custom", brandMask: "DesignerGPT", brandImage: "data:image/png;base64,AA==" } }, "*");
+  });
+  await page.waitForTimeout(100);
+  const tinyOpen = page.locator("#stage-sidebar-tiny-bar button[aria-controls='stage-slideover-sidebar']");
+  assert.notStrictEqual(await tinyOpen.evaluate((node) => getComputedStyle(node, "::before").backgroundImage), "none", "collapsed sidebar must render the custom logo");
+  assert.strictEqual(await tinyOpen.locator("[data-icon='blossom']").evaluate((node) => getComputedStyle(node).visibility), "hidden", "collapsed sidebar must hide the original ChatGPT blossom");
+  assert.notStrictEqual(await tinyOpen.locator("[data-icon='sidebar']").evaluate((node) => getComputedStyle(node).visibility), "hidden", "collapsed sidebar must preserve its expansion icon");
+  assert.strictEqual(await page.locator("#stage-sidebar-tiny-bar button[aria-label='Open profile menu']").evaluate((node) => getComputedStyle(node, "::before").backgroundImage), "none", "custom logo must not leak onto other rail buttons");
+  await tinyOpen.hover();
+  await page.waitForTimeout(180);
+  assert.strictEqual(await tinyOpen.evaluate((node) => getComputedStyle(node, "::before").opacity), "0", "hover must reveal the native expansion affordance");
+  await page.evaluate(() => {
+    document.querySelector("#stage-sidebar-tiny-bar")?.remove();
+    window.postMessage({ type: "LCGS_APPLY_SETTINGS", settings: { enabled: true, theme: "default", backgroundMode: "solid", promptTools: true, messageNavigator: true, promptSlashPalette: true, localNotes: false } }, "*");
+  });
+  await page.waitForTimeout(200);
+
   await page.getByRole("button", { name: "Prompt", exact: true }).click();
   await page.waitForTimeout(200);
   assert.ok(await page.locator(".lcgs-snippet-list").evaluate((node) => node.scrollWidth <= node.clientWidth), "prompt snippets must not overflow horizontally");
@@ -321,6 +343,12 @@ async function createRouteFixture(pathname, markup) {
       className: "lcgs-view-plugins",
       markup: '<div class="bg-primary min-h-screen"><article data-surface>Plugin</article></div>',
       surface: "article"
+    },
+    {
+      path: "/profile",
+      className: "lcgs-view-profile",
+      markup: '<div class="bg-token-main-surface-primary"><div><section data-profile-stats>Stats</section><div><button aria-pressed="true">Daily</button><button aria-pressed="false">Weekly</button></div><div data-profile-cell style="background:var(--profile-usage-level-2);width:12px;height:12px"></div></div></div>',
+      surface: "main#main"
     }
   ];
   for (const fixture of routeFixtures) {
@@ -328,6 +356,11 @@ async function createRouteFixture(pathname, markup) {
     assert.strictEqual(await routePage.locator("html").getAttribute("class").then((value) => value?.includes(fixture.className)), true, `${fixture.path} should activate its route class`);
     assert.notStrictEqual(await routePage.locator(fixture.surface).evaluate((node) => getComputedStyle(node).backgroundColor), "rgba(0, 0, 0, 0)", `${fixture.path} content should remain readable over a wallpaper`);
     if (fixture.path === "/library") assert.strictEqual(await routePage.locator("[data-toolbar]").evaluate((node) => getComputedStyle(node).backgroundColor), "rgba(0, 0, 0, 0)", "Library toolbar shell should not render as a black band");
+    if (fixture.path === "/profile") {
+      assert.notStrictEqual(await routePage.locator("[data-profile-stats]").evaluate((node) => getComputedStyle(node).backgroundColor), "rgba(0, 0, 0, 0)", "Profile stats must use a readable themed surface");
+      assert.notStrictEqual(await routePage.locator("button[aria-pressed='true']").evaluate((node) => getComputedStyle(node).backgroundColor), await routePage.locator("button[aria-pressed='false']").evaluate((node) => getComputedStyle(node).backgroundColor), "Profile segment selection must be visible");
+      assert.notStrictEqual(await routePage.locator("[data-profile-cell]").evaluate((node) => getComputedStyle(node).backgroundColor), "rgba(0, 0, 0, 0)", "Profile activity cells must retain visible intensity");
+    }
     assert.strictEqual(await routePage.locator("#local-chatgpt-styler-notes").count(), 0, `${fixture.path} should not show conversation notes`);
     await routePage.close();
   }

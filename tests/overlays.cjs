@@ -26,6 +26,7 @@ let browser;
     [role=switch][aria-checked=true]>span { transform:translateX(12px); }
     .row { display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:20px; }
     [role=listbox],[role=menu],[role=tooltip],[role=alertdialog] { border:1px solid; padding:12px; width:240px; margin:16px; }
+    #dialog-shell,#search-shell { background:rgba(0,0,0,.5); }
     #pricing { margin:16px; }
     [data-testid=pricing-modal-plan-grid] { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px; }
     [data-testid$="-pricing-modal-column"] { padding:16px;border:1px solid;border-radius:8px; }
@@ -36,6 +37,7 @@ let browser;
   </style></head><body>
     <nav aria-label="Chat history"><a href="/images">Images</a><a href="/images?view=all">Images query</a><a href="/library">Library</a></nav>
     <main id="main"><a href="/images" id="content-image-link">An image link in content</a>
+      <div id="profile-fixture"><section id="profile-stats">Stats</section><button aria-pressed="true">Daily</button><button aria-pressed="false">Weekly</button><div id="profile-cell" style="width:12px;height:12px;background:var(--profile-usage-level-2)"></div></div>
       <div id="settings" class="popover bg-token-bg-primary" role="dialog">
         <h2>Settings</h2><div role="tablist"><button role="tab" aria-selected="true">General</button><button role="tab" aria-selected="false">Notifications</button></div>
         <div class="row"><label for="search">Search settings</label><input id="search" placeholder="Search"></div>
@@ -49,6 +51,8 @@ let browser;
     <div data-radix-popper-content-wrapper><div id="dropdown" role="listbox" class="popover hardcoded-dropdown"><div role="option" tabindex="0" aria-selected="true">Dark</div><div role="option" tabindex="0" aria-selected="false">Light</div><div role="option" aria-disabled="true">Unavailable</div></div></div>
     <div id="context-menu" role="menu" class="popover"><div role="menuitem" tabindex="0">Settings</div><div role="menuitem" aria-disabled="true">Unavailable</div></div>
     <div id="tooltip" role="tooltip">Theme tooltip</div><div id="alert" role="alertdialog">Confirmation<button class="btn-secondary">Cancel</button></div>
+    <dialog id="dialog-shell" open><div id="profile-edit" role="dialog"><header>Edit profile</header><label>Display name <input value="Fixture"></label><footer><button class="btn-secondary">Cancel</button><button class="btn-primary">Save</button></footer></div></dialog>
+    <div id="search-shell" role="dialog"><div id="search-panel" class="popover"><input placeholder="Search"><div>Recent chats</div></div></div>
     <div id="pricing" role="dialog" class="bg-token-bg-primary bg-token-bg-elevated-secondary"><div data-testid="pricing-modal-non-footer-content" class="bg-token-bg-elevated-secondary"><h2>Choose your plan</h2><div role="radiogroup" class="bg-token-main-surface-tertiary"><button role="radio" aria-checked="true">Personal</button><button role="radio" aria-checked="false">Business</button></div><div data-testid="pricing-modal-plan-grid">${["go","plus","pro"].map(plan=>`<div data-testid="${plan}-pricing-modal-column" class="bg-token-main-surface-primary"><div data-testid="${plan}-pricing-modal-column-top-half" class="bg-token-main-surface-primary"><h3>${plan}</h3></div><p>Plan details</p><button class="btn-secondary">Plan action</button></div>`).join("")}</div></div></div>
     <div id="image-preview" role="dialog"><canvas width="100" height="60"></canvas><button aria-label="Zoom level 100%">100%</button><button>Erase</button></div>
   </body></html>`);
@@ -71,11 +75,14 @@ let browser;
     const ctx=canvas.getContext('2d');ctx.fillStyle=getComputedStyle(node).backgroundColor;ctx.fillRect(0,0,1,1);
     return Array.from(ctx.getImageData(0,0,1,1).data);
   });
+  const panelColors=new Set();
   for (const [theme, rgb] of [["default",[32,33,35]],["paper",[255,253,248]],["developersTaste",[86,41,80]]]) {
     await page.evaluate(theme=>window.postMessage({type:"LCGS_APPLY_SETTINGS",settings:{enabled:true,theme,compactSidebar:true,backgroundMode:"solid"}},"*"),theme);
     await page.waitForTimeout(200);
-    for (const selector of ["#settings","#dropdown","#context-menu","#tooltip","#alert","#pricing",'[data-testid="pricing-modal-non-footer-content"]']) {
-      assert.deepEqual(await pixel(selector),[...rgb,255],`${theme} ${selector} must use an opaque themed surface`);
+    const panelPixel=await pixel('#settings');
+    panelColors.add(JSON.stringify(panelPixel));
+    for (const selector of ["#settings","#dropdown","#context-menu","#tooltip","#alert","#profile-edit","#search-panel","#pricing",'[data-testid="pricing-modal-non-footer-content"]']) {
+      assert.deepEqual(await pixel(selector),panelPixel,`${theme} ${selector} must use the same opaque panel surface`);
     }
     assert.notEqual(await color('[data-testid="plus-pricing-modal-column"]'),await color('#pricing'),"pricing cards must be distinguishable");
     assert.equal(await color('[data-testid="pro-pricing-modal-column"]',"backgroundImage"),"none","Pro must not retain its hard-coded blue gradient");
@@ -88,12 +95,24 @@ let browser;
     assert.equal(await color('#dropdown [aria-disabled="true"]',"cursor"),"not-allowed");
     assert.notEqual(await color('#dropdown [aria-selected="true"]'),await color('#dropdown [aria-selected="false"]'));
     assert.notEqual(await color('[role="combobox"]'),"rgba(0, 0, 0, 0)");
+    const backdropAlpha=(await pixel('#dialog-shell'))[3];
+    assert.ok(backdropAlpha>130&&backdropAlpha<160,"dialog backdrop must remain a translucent dimmer");
+    const searchBackdropAlpha=(await pixel('#search-shell'))[3];
+    assert.ok(searchBackdropAlpha>130&&searchBackdropAlpha<160,"role-dialog wrapper must remain a translucent dimmer");
+    assert.notEqual(await color('#profile-edit > header'),await color('#profile-edit'),"modal header must remain visually organized");
     assert.equal(await page.locator('nav a[href="/images"]').isVisible(),theme!=="developersTaste");
     assert.equal(await page.locator('nav a[href="/images?view=all"]').isVisible(),theme!=="developersTaste");
     assert.equal(await page.locator('nav a[href="/library"]').isVisible(),true);
     assert.equal(await page.locator('#content-image-link').isVisible(),true);
     assert.deepEqual(await pixel('#image-preview'),[32,33,36,255],"image viewer must retain its separate treatment");
+    await page.evaluate(()=>document.documentElement.classList.add('lcgs-view-profile'));
+    assert.deepEqual(await pixel('main#main'),[...rgb,255],`${theme} Profile must use an opaque data canvas`);
+    assert.notDeepEqual(await pixel('#profile-stats'),await pixel('main#main'),`${theme} Profile stats must remain grouped`);
+    assert.notEqual(await color('#profile-fixture [aria-pressed="true"]'),await color('#profile-fixture [aria-pressed="false"]'),`${theme} Profile segment state must be visible`);
+    assert.equal((await pixel('#profile-cell'))[3],255,`${theme} Profile activity cells must be opaque over its canvas`);
+    await page.evaluate(()=>document.documentElement.classList.remove('lcgs-view-profile'));
   }
+  assert.equal(panelColors.size,3,"overlay panels must adapt to each theme palette");
   const toggle=page.getByRole('switch',{name:'Dictation',exact:true});
   const before=await toggle.boundingBox();
   await toggle.click();
